@@ -1,0 +1,21 @@
+.tooltipContainer {
+    display: flex;
+    background-color: #313131;
+    padding: 0 4rem;
+    align-items: center;
+    justify-content: space-around;
+    gap: 4rem;
+    height: 4rem;
+}
+
+#audio-file-select {
+    margin-left: 1rem;
+}
+
+#trim-btn {
+    margin: 0 1.2rem;
+}
+
+.error {
+    color: red;
+}

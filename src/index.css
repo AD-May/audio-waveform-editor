@@ -1,0 +1,14 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+:root {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: black;
+  color: white;
+}
+
+header > h1 {
+  text-align: center;
+}
