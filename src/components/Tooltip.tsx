@@ -12,6 +12,7 @@ export default function Tooltip({ setFile }) {
 				setError("Please upload only one file.");
 				return;
 			}
+			// File size must be less than 10MB
 			if (files[0].size > 10_485_760) {
 				setError("Please upload a file less than 10MB.");
 				return;

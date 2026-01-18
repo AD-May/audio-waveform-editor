@@ -1,5 +1,13 @@
 .waveformDisplay {
     background-color: #818181;
-    height: 10em;
+    height: 16em;
     width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.defaultAudioBtn {
+    background-color: orange;
+    font-weight: 500;
 }

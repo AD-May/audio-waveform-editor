@@ -26,7 +26,7 @@ export default function App() {
         <Tooltip setFile={setCurrentFile}/>
       </header>
       <main>
-        <WaveformDisplay loadDefaultAudio={loadDefaultAudio} currentFile={currentFile} setFile={setCurrentFile} />
+        <WaveformDisplay loadDefaultAudio={loadDefaultAudio} currentFile={currentFile} />
       </main>
       <footer>
         Created by <i>Alex M</i>
