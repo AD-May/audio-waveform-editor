@@ -1,8 +1,20 @@
 import './WaveformDisplay.css';
-import { useRef, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
-export default function WaveformDisplay({ loadDefaultAudio, currentFile }) {
+export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo }) {
+    const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
 	const audioRef = useRef(null);
+
+    console.log(currentSettingInfo);
+
+    useEffect(() => {
+        const audioContext = new AudioContext();
+        setAudioContext(audioContext);
+
+        return () => {
+            audioContext.close();
+        }
+    }, [currentFile])
 
 	// // TODO: With the audio context created, use createMediaElementSource on it passing in an <audio> element
     // function create
@@ -32,6 +44,28 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile }) {
 		);
 		return resultPromise;
 	}
+
+    async function getAudioBuffer(): Promise<AudioBuffer | undefined> {
+        const audioBuffer = await audioContext?.decodeAudioData(await getArrayBuffer() as ArrayBuffer);
+        if (!audioBuffer) {
+            console.error("Could not convert audio ArrayBuffer to AudioBuffer.");
+        };
+        
+        return audioBuffer;
+    }
+
+    async function getWaveformData(): Promise<Float32Array | undefined> {
+        const audioBuffer = await getAudioBuffer();
+        return audioBuffer?.getChannelData(0);
+    }
+    
+    //TODO: Take data from getWaveformData and render it to svg with D3.js
+    async function testWaveformData() {
+        const waveformData = await getWaveformData();
+        console.log(waveformData);
+    }
+  
+    testWaveformData();
 
 	return (
 		<div className="waveformDisplay">

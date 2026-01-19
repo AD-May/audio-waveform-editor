@@ -1,5 +1,6 @@
 .tooltipContainer {
     display: flex;
+    margin-top: 2rem;
     background-color: #313131;
     padding: 0 4rem;
     align-items: center;
@@ -18,4 +19,9 @@
 
 .error {
     color: red;
+}
+
+.slider {
+    width: min-content;
+    accent-color: orange;
 }

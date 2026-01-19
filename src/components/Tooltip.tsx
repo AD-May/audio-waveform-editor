@@ -4,8 +4,12 @@ import './Tooltip.css';
 import { faPlay, faPause } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-export default function Tooltip({ setFile, audioRef }) {
+export default function Tooltip({ setFile, audioRef, setSettingInfo }) {
 	const [error, setError] = useState<string>("");
+	const [displaySlider, setDisplaySlider] = useState<boolean>(false);
+	const [currentSetting, setCurrentSetting] = useState<string>("");
+
+	//TODO: Find some way to add the name of the edit and the current slidervalue to the setSliderInfo prop
 
 	function onSelectFile(event: ChangeEvent): void {
 		const files = (event.target as HTMLInputElement).files
@@ -28,6 +32,14 @@ export default function Tooltip({ setFile, audioRef }) {
 			audioRef.current.pause();
 		} else {
 			audioRef.current.play();
+		}
+	}
+
+	function handleDisplaySlider(): void {
+		if (displaySlider) {
+			setDisplaySlider(false);
+		} else {
+			setDisplaySlider(true);
 		}
 	}
 	
@@ -58,11 +70,15 @@ export default function Tooltip({ setFile, audioRef }) {
 			</span>
 			<span className="editContainer">
 				<button
-					id="fade-btn"
+					id="balance-btn"
 					className="btn btn-light"
-					aria-label="fade button"
+					aria-label="balance button"
+					onClick={() => {
+						handleDisplaySlider();
+						setCurrentSetting("balance");
+					}}
 				>
-					Fade
+					Balance
 				</button>
 				<button
 					id="trim-btn"
@@ -75,19 +91,33 @@ export default function Tooltip({ setFile, audioRef }) {
 					id="volume-btn"
 					className="btn btn-light"
 					aria-label="volume button"
+					onClick={() => {
+						handleDisplaySlider();
+						setCurrentSetting("volume");
+					}}
 				>
 					Volume
 				</button>
 			</span>
+			{displaySlider && (
+				<input
+					type="range"
+					className="slider"
+					min="0"
+					max="100"
+					onChange={(e) => setSettingInfo({ currentSetting, value: e.target.value})}
+				/>
+			)}
 			<span className="controls">
-				<button 
-					id="play-btn" 
-					className="btn btn-light" 
+				<button
+					id="play-btn"
+					className="btn btn-light"
 					onClick={handleAudioPlayback}
 					title="Play/Pause"
 					aria-label="play button"
 				>
-					<FontAwesomeIcon icon={faPlay} />/<FontAwesomeIcon icon={faPause} />
+					<FontAwesomeIcon icon={faPlay} />/
+					<FontAwesomeIcon icon={faPause} />
 				</button>
 			</span>
 			<span className="exportContainer">
