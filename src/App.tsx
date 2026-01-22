@@ -7,10 +7,12 @@ export default function App() {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [audioSrc, setAudioSrc] = useState<string | undefined>(undefined);
   const [settingInfo, setSettingInfo] = useState<object>({});
+  const [audioContext , setAudioContext] = useState<AudioContext|null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+
   async function loadDefaultAudio(): Promise<void> {
-    const DEFAULT_AUDIO_URL: string = "/assets/default-audio[for-p].mp3";
+    const DEFAULT_AUDIO_URL = "/assets/default-audio[for-p].mp3";
     try {
       const response = await fetch(DEFAULT_AUDIO_URL);
 		  const audioBlob = await response.blob();
@@ -20,7 +22,6 @@ export default function App() {
       setCurrentFile(file);
     } catch (error) {
       console.error("Issue fetching default audio: ", error);
-      throw error;
     }
   }
 
@@ -35,6 +36,16 @@ export default function App() {
     }
   }, [currentFile]);
 
+  useEffect(() => {
+    const newAudioContext = new AudioContext();
+    setAudioContext(newAudioContext);
+
+    return () => {
+      newAudioContext.close();
+    } 
+
+  },[])
+
   return (
     <>
       <header>
@@ -43,7 +54,7 @@ export default function App() {
       </header>
       <main>
         <audio ref={audioRef} src={audioSrc}></audio>
-        <WaveformDisplay loadDefaultAudio={loadDefaultAudio} currentFile={currentFile} currentSettingInfo={settingInfo} />
+        <WaveformDisplay loadDefaultAudio={loadDefaultAudio} currentFile={currentFile} currentSettingInfo={settingInfo} audioContext={audioContext} />
       </main>
       <footer>
         Created by <i>Alex M</i>
