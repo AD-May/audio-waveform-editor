@@ -1,8 +1,8 @@
 import type { ChangeEvent } from 'react';
 import { useState } from 'react';
 import './Tooltip.css';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPause } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export default function Tooltip({ setFile, audioRef, setSettingInfo }) {
 	const [error, setError] = useState<string>("");
@@ -105,7 +105,12 @@ export default function Tooltip({ setFile, audioRef, setSettingInfo }) {
 					className="slider"
 					min="0"
 					max="100"
-					onChange={(e) => setSettingInfo({ currentSetting, value: e.target.value})}
+					onChange={(e) =>
+						setSettingInfo({
+							currentSetting,
+							value: e.target.value,
+						})
+					}
 				/>
 			)}
 			<span className="controls">
