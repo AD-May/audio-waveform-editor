@@ -4,14 +4,16 @@ import * as d3 from 'd3';
 
 export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext }) {
 	const [audioData, setAudioData] = useState<number[]|null>(null);
+	const [currentClientX, setCurrentClientX] = useState<number>(0);
  	const audioRef = useRef<HTMLAudioElement>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
 
-	const SVG_MARGIN = {
+	console.log(currentClientX);
+
+	const SVG_DIMENSIONS = {
 		height: 500,
 		width: 700,
 	}
-
 
 	interface LinearScales {
 		x: d3.ScaleLinear<number, number>;
@@ -28,20 +30,22 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 			const waveformData = audioBuffer?.getChannelData(0);
 			const cleanedData = getCleanData(waveformData);
 			const downsampledData: number[] | void = downsample(cleanedData, 2000);
-			console.log(downsampledData);
 			setAudioData(downsampledData as number[]);
 		}
 		if (currentFile && audioContext) {
 			setWaveformData();
 		}
-	}, [currentFile]);
+	}, [currentFile, audioContext]);
 
 	// Re-render waveform when audio data is edited or a new file is added
 	useEffect(() => {
+		if (!currentFile || !audioData) return;
+		const svg = d3.select(svgRef.current);
+		const axisScales = getAxisScales() as LinearScales; 
+		setCurrentClientX(0);
 
 		async function appendAreaPath(scales: LinearScales): Promise<void> {
 			if (!audioData) return;
-			const svg = d3.select(svgRef.current);
 			const area = getAreaPath(scales);
 			svg.append("path")
 				.datum(audioData)
@@ -60,22 +64,39 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 				.curve(d3.curveStep);
 			return area;
 		}
-		appendAreaPath(getAxisScales());
 
-		const svg = svgRef.current;
+		function renderNewLine(): void {
+			svg.append("line")
+				.attr("x1", currentClientX)
+				.attr("y1", SVG_DIMENSIONS.height)
+				.attr("x2", currentClientX)
+				.attr("y2", 0)
+				.attr("stroke", "blue")
+				.attr("stroke-width", "3px");
+		}
+
+		appendAreaPath(axisScales);
+		renderNewLine();
+
 		return () => {
-			d3.select(svg).selectAll("path").remove();
+			svg.selectAll("path").remove();
 		}
 
 	}, [audioData, currentFile]);
 
+	useEffect(() => {
+		const currentLine = d3.select(svgRef.current).select("line");
+		currentLine.attr("x1", currentClientX);
+		currentLine.attr("x2", currentClientX);
+	}, [currentClientX])
 
-	function getAxisScales(): LinearScales|Error {
 
-		if (!audioData) {
-			return new Error(
-				"Could not get audio channel data to create X/Y Scales.",
-			);
+
+	function getAxisScales(): LinearScales|undefined {
+
+		if (!audioData && currentFile !== null) {
+			console.error("Could not get audio channel data to create X/Y Scales.");
+			return undefined
 		}
 		const arrayFromTypedArray = [...audioData];
 		const minData = d3.min(arrayFromTypedArray) as number;
@@ -85,13 +106,13 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 			.domain([0, audioData.length])
 			.range([
 				0,
-				SVG_MARGIN.width,
+				SVG_DIMENSIONS.width,
 			]);
 		const yScale = d3
 			.scaleLinear()
 			.domain([minData, maxData])
 			.range([
-				SVG_MARGIN.height,
+				SVG_DIMENSIONS.height,
 				0,
 			]);
 
@@ -151,9 +172,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 				(await getArrayBuffer()) as ArrayBuffer,
 			);
 			if (!audioBuffer) {
-				console.error(
-					"Could not convert audio ArrayBuffer to AudioBuffer.",
-				);
+				console.error("Could not convert audio ArrayBuffer to AudioBuffer.");
 			}
 			return audioBuffer;
 		}
@@ -161,6 +180,10 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 
 	function getCleanData(data: Float32Array): Float32Array {
 		return data.filter((data) => data !== undefined);
+	}
+
+	function renderUserLine(): void {
+		svgRef.current
 	}
 
 	return (
@@ -173,9 +196,10 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 			) : (
 				<svg 
 					id="waveform" 
-					viewBox={`0 0 ${SVG_MARGIN.width} ${SVG_MARGIN.height}`} 
+					viewBox={`0 0 ${SVG_DIMENSIONS.width} ${SVG_DIMENSIONS.height}`} 
 					preserveAspectRatio="xMidYMid slice"
 					ref={svgRef}
+					onMouseMove={(e) => setCurrentClientX(e.nativeEvent.offsetX)}
 				>
 				</svg>
 			)}
