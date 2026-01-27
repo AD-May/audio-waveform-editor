@@ -8,8 +8,8 @@ export default function App() {
   const [audioSrc, setAudioSrc] = useState<string | undefined>(undefined);
   const [settingInfo, setSettingInfo] = useState<object>({});
   const [audioContext , setAudioContext] = useState<AudioContext|null>(null);
+  const [isPaused, setIsPaused] = useState<boolean>(true);
   const audioRef = useRef<HTMLAudioElement>(null);
-
 
   async function loadDefaultAudio(): Promise<void> {
     const DEFAULT_AUDIO_URL = "/assets/default-audio[for-p].mp3";
@@ -50,11 +50,17 @@ export default function App() {
     <>
       <header>
         <h1 className="display-1">Audio Waveform Editor</h1>
-        <Tooltip setFile={setCurrentFile} audioRef={audioRef} setSettingInfo={setSettingInfo} />
+        <Tooltip setFile={setCurrentFile} audioRef={audioRef} setSettingInfo={setSettingInfo} setIsPaused={setIsPaused} />
       </header>
       <main>
         <audio ref={audioRef} src={audioSrc}></audio>
-        <WaveformDisplay loadDefaultAudio={loadDefaultAudio} currentFile={currentFile} currentSettingInfo={settingInfo} audioContext={audioContext} />
+        <WaveformDisplay 
+          loadDefaultAudio={loadDefaultAudio} 
+          currentFile={currentFile} 
+          currentSettingInfo={settingInfo} 
+          audioContext={audioContext}
+          audioPaused={isPaused}
+        />
       </main>
       <footer>
         Created by <i>Alex M</i>

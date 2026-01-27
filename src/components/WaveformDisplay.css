@@ -13,7 +13,11 @@
     width: 90%;
 }
 
-#waveform > line{
+#waveform > path {
+    pointer-events: none;
+}
+
+#waveform > line {
     z-index: 10;
 }
 

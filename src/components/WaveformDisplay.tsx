@@ -2,13 +2,11 @@ import './WaveformDisplay.css';
 import { useRef, useState, useEffect } from 'react';
 import * as d3 from 'd3';
 
-export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext }) {
+export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioPaused }) {
 	const [audioData, setAudioData] = useState<number[]|null>(null);
-	const [currentClientX, setCurrentClientX] = useState<number>(0);
+	const [displayX, setDisplayX] = useState<number>(0);
  	const audioRef = useRef<HTMLAudioElement>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
-
-	console.log(currentClientX);
 
 	const SVG_DIMENSIONS = {
 		height: 500,
@@ -42,7 +40,6 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		if (!currentFile || !audioData) return;
 		const svg = d3.select(svgRef.current);
 		const axisScales = getAxisScales() as LinearScales; 
-		setCurrentClientX(0);
 
 		async function appendAreaPath(scales: LinearScales): Promise<void> {
 			if (!audioData) return;
@@ -67,12 +64,12 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 
 		function renderNewLine(): void {
 			svg.append("line")
-				.attr("x1", currentClientX)
+				.attr("x1", 0)
 				.attr("y1", SVG_DIMENSIONS.height)
-				.attr("x2", currentClientX)
+				.attr("x2", 0)
 				.attr("y2", 0)
 				.attr("stroke", "blue")
-				.attr("stroke-width", "3px");
+				.attr("stroke-width", "1px");
 		}
 
 		appendAreaPath(axisScales);
@@ -86,11 +83,9 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 
 	useEffect(() => {
 		const currentLine = d3.select(svgRef.current).select("line");
-		currentLine.attr("x1", currentClientX);
-		currentLine.attr("x2", currentClientX);
-	}, [currentClientX])
-
-
+		currentLine.attr("x1", displayX);
+		currentLine.attr("x2", displayX);
+	}, [displayX, audioData])
 
 	function getAxisScales(): LinearScales|undefined {
 
@@ -182,8 +177,15 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		return data.filter((data) => data !== undefined);
 	}
 
-	function renderUserLine(): void {
-		svgRef.current
+	function handleMouseMove(e: React.MouseEvent<SVGSVGElement>): void {
+		const screenX = e.nativeEvent.offsetX;
+		const rect = svgRef.current?.getBoundingClientRect();
+		if (!rect) {
+			setDisplayX(e.nativeEvent.offsetX);
+			return;
+		}
+		const viewBoxX = (screenX / rect.width) * SVG_DIMENSIONS.width;
+		setDisplayX(viewBoxX);
 	}
 
 	return (
@@ -199,7 +201,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 					viewBox={`0 0 ${SVG_DIMENSIONS.width} ${SVG_DIMENSIONS.height}`} 
 					preserveAspectRatio="xMidYMid slice"
 					ref={svgRef}
-					onMouseMove={(e) => setCurrentClientX(e.nativeEvent.offsetX)}
+					onMouseMove={(e) => handleMouseMove(e)}
 				>
 				</svg>
 			)}
