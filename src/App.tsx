@@ -8,8 +8,9 @@ export default function App() {
   const [audioSrc, setAudioSrc] = useState<string | undefined>(undefined);
   const [settingInfo, setSettingInfo] = useState<object>({});
   const [audioContext , setAudioContext] = useState<AudioContext|null>(null);
-  const [isPaused, setIsPaused] = useState<boolean>(true);
+  //const [audioNodes, setAudioNodes]
   const audioRef = useRef<HTMLAudioElement>(null);
+  const isAudioConnected = useRef(false);
 
   async function loadDefaultAudio(): Promise<void> {
     const DEFAULT_AUDIO_URL = "/assets/default-audio[for-p].mp3";
@@ -26,31 +27,38 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (currentFile) {
-      const audioURL = URL.createObjectURL(currentFile);
-      setAudioSrc(audioURL);
-    
-    return () => URL.revokeObjectURL(audioURL);
-    } else {
-      setAudioSrc(undefined);
-    }
-  }, [currentFile]);
-
-  useEffect(() => {
-    const newAudioContext = new AudioContext();
-    setAudioContext(newAudioContext);
+    let audioURL: string;
+    if (currentFile && audioRef.current) {
+      audioURL = URL.createObjectURL(currentFile);
+		  setAudioSrc(audioURL);
+	  } else {
+		  setAudioSrc(undefined);
+	  }
 
     return () => {
-      newAudioContext.close();
-    } 
+      URL.revokeObjectURL(audioURL);
+    }
 
-  },[])
+  }, [currentFile, audioContext]);
+
+  useEffect(() => {
+    if (isAudioConnected.current) return;
+    
+    const newAudioContext = new AudioContext();
+    const source = new MediaElementAudioSourceNode(newAudioContext, {
+      mediaElement: audioRef.current!,
+    });
+    source.connect(newAudioContext.destination);
+    setAudioContext(newAudioContext);
+    isAudioConnected.current = true;
+
+  }, [])
 
   return (
     <>
       <header>
         <h1 className="display-1">Audio Waveform Editor</h1>
-        <Tooltip setFile={setCurrentFile} audioRef={audioRef} setSettingInfo={setSettingInfo} setIsPaused={setIsPaused} />
+        <Tooltip setFile={setCurrentFile} audioContext={audioContext} setSettingInfo={setSettingInfo} audioRef={audioRef} />
       </header>
       <main>
         <audio ref={audioRef} src={audioSrc}></audio>
@@ -59,7 +67,7 @@ export default function App() {
           currentFile={currentFile} 
           currentSettingInfo={settingInfo} 
           audioContext={audioContext}
-          audioPaused={isPaused}
+          audioRef={audioRef}
         />
       </main>
       <footer>

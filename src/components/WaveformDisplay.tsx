@@ -2,10 +2,14 @@ import './WaveformDisplay.css';
 import { useRef, useState, useEffect } from 'react';
 import * as d3 from 'd3';
 
-export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioPaused }) {
+const downsampleWorker = new Worker(
+	new URL("../utils/downsample.mjs", import.meta.url),
+	{ type: 'module' }
+);
+
+export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioRef }) {
 	const [audioData, setAudioData] = useState<number[]|null>(null);
 	const [displayX, setDisplayX] = useState<number>(0);
- 	const audioRef = useRef<HTMLAudioElement>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
 
 	const SVG_DIMENSIONS = {
@@ -19,7 +23,9 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 	}
 
 	useEffect(() => {
-		async function setWaveformData(): Promise<void> {
+		const numberOfSamples = 2000;
+
+		async function getWaveformData(): Promise<void> {
 			const audioBuffer = await getAudioBuffer();
 			if (!audioBuffer) {
 				console.error("Could not convert AudioBuffer to channel data.");
@@ -27,13 +33,23 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 			}
 			const waveformData = audioBuffer?.getChannelData(0);
 			const cleanedData = getCleanData(waveformData);
-			const downsampledData: number[] | void = downsample(cleanedData, 2000);
-			setAudioData(downsampledData as number[]);
+			downsampleWorker.postMessage({
+				data: cleanedData,
+				targetLength: numberOfSamples,
+			});
 		}
 		if (currentFile && audioContext) {
-			setWaveformData();
+			getWaveformData();
 		}
 	}, [currentFile, audioContext]);
+
+	useEffect(() => {
+
+		downsampleWorker.onmessage = (e) => {
+			setAudioData(e.data);
+		};
+
+	}, []);
 
 	// Re-render waveform when audio data is edited or a new file is added
 	useEffect(() => {
@@ -48,7 +64,6 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 				.datum(audioData)
 				.attr("fill", "#ff980A")
 				.attr("d", area(audioData));
-			
 		}
 
 		function getAreaPath(scales: LinearScales): d3.Area<number> {
@@ -75,8 +90,8 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		appendAreaPath(axisScales);
 		renderNewLine();
 
-		return () => {
-			svg.selectAll("path").remove();
+		return () => {;
+			svg.selectAll("*").remove();
 		}
 
 	}, [audioData, currentFile]);
@@ -85,7 +100,8 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		const currentLine = d3.select(svgRef.current).select("line");
 		currentLine.attr("x1", displayX);
 		currentLine.attr("x2", displayX);
-	}, [displayX, audioData])
+	}, [displayX]);
+
 
 	function getAxisScales(): LinearScales|undefined {
 
@@ -113,30 +129,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 
 		const scales: LinearScales = { x: xScale, y: yScale };
 		return scales;
-	}
-
-	function downsample(data: Float32Array, targetLength: number): number[] | void {
-		const result: number[] | undefined = [];
-		const chunkSize = Math.floor(data.length / targetLength);
-		let currentChunk = [];
-
-		for (let i = 0; i <= data.length - chunkSize; i++) {
-			if (currentChunk.length > 0 && i % chunkSize === 0) {
-				let chunkAverage = d3.mean(currentChunk);
-				result.push(chunkAverage);
-				currentChunk = [];
-			}
-			currentChunk.push(data[i]);
-		}
-
-		if (typeof result === "undefined") {
-			console.error("Audio source could not be downsampled for visualization.");
-			return;
-		}
-
-		return result;
-	}
-	
+	}	
 
 	function getArrayBuffer(): Promise<ArrayBuffer|void> | Error {
 		if (currentFile) {
@@ -188,9 +181,15 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		setDisplayX(viewBoxX);
 	}
 
+	function getCursorAudioTime() {
+		if (!svgRef.current) return;
+		const percentSeeked = displayX / SVG_DIMENSIONS.width;
+		return audioRef.current?.duration * percentSeeked;
+	}
+
+
 	return (
 		<div className="waveformDisplay">
-			<audio ref={audioRef}></audio>
 			{!currentFile ? (
 				<button className="defaultAudioBtn" onClick={loadDefaultAudio}>
 					Load Default Audio

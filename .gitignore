@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+# Remove this when deploying
+downsample.mjs
 
 # Editor directories and files
 .vscode/*
