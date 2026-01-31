@@ -2,10 +2,13 @@ import './WaveformDisplay.css';
 import { useRef, useState, useEffect } from 'react';
 import * as d3 from 'd3';
 
+// TODO: Make sure URL path is corrected when we move .mjs file from build into dist dir
 const downsampleWorker = new Worker(
 	new URL("../utils/downsample.mjs", import.meta.url),
 	{ type: 'module' }
 );
+
+const NUMBER_OF_SAMPLES = 2000;
 
 export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioRef }) {
 	const [audioData, setAudioData] = useState<number[]|null>(null);
@@ -23,7 +26,6 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 	}
 
 	useEffect(() => {
-		const numberOfSamples = 2000;
 
 		async function getWaveformData(): Promise<void> {
 			const audioBuffer = await getAudioBuffer();
@@ -35,7 +37,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 			const cleanedData = getCleanData(waveformData);
 			downsampleWorker.postMessage({
 				data: cleanedData,
-				targetLength: numberOfSamples,
+				targetLength: NUMBER_OF_SAMPLES,
 			});
 		}
 		if (currentFile && audioContext) {
@@ -51,8 +53,9 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 
 	// Re-render waveform when audio data is edited or a new file is added
 	useEffect(() => {
+		// Extract all this logic to a custom useRenderWaveform hook
 		if (!currentFile || !audioData) return;
-		const svg = d3.select(svgRef.current);
+		const svg = getSvgSelection();
 		const axisScales = getAxisScales() as LinearScales; 
 
 		async function appendAreaPath(scales: LinearScales): Promise<void> {
@@ -85,8 +88,29 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 				.attr("stroke-width", "1px");
 		}
 
+		function createZoom() {
+			const transformBehavior = (event) => {
+				const panSpeed = 2.0;
+
+				const t = event.transform;
+				const x = t.x * panSpeed;
+				const y = t.y * panSpeed;
+
+				return `translate(${x}, ${y}) scale(${t.k})`;
+			}
+			const svg = getSvgSelection();
+			const zoom = d3
+				.zoom<SVGSVGElement, unknown>()
+				.on("zoom", (event) => svg.attr("transform", transformBehavior(event)))
+				.scaleExtent([1, 2])
+				.translateExtent([[0, 0], [SVG_DIMENSIONS.width, SVG_DIMENSIONS.height]]);
+
+			svg.call(zoom);
+		}
+
 		appendAreaPath(axisScales);
 		renderNewLine();
+		createZoom();
 
 		return () => {;
 			svg.selectAll("*").remove();
@@ -96,10 +120,10 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 
 	// Update line position when displayX changes
 	useEffect(() => {
-		d3.select(svgRef.current)
-			.select("line")
-			.attr("x1", displayX)
-			.attr("x2", displayX);
+		const svg = getSvgSelection();
+			svg.select("line")
+				.attr("x1", displayX)
+				.attr("x2", displayX);
 	}, [displayX]);
 
 	// Animate playhead during playback using requestAnimationFrame
@@ -227,6 +251,10 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		if (!svgRef.current) return;
 		const percentSeeked = displayX / SVG_DIMENSIONS.width;
 		return audioRef.current?.duration * percentSeeked;
+	}
+
+	function getSvgSelection() {
+		return d3.select<SVGSVGElement, unknown>(svgRef.current!);
 	}
 
 
