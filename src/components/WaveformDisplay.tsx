@@ -44,11 +44,9 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 	}, [currentFile, audioContext]);
 
 	useEffect(() => {
-
 		downsampleWorker.onmessage = (e) => {
 			setAudioData(e.data);
 		};
-
 	}, []);
 
 	// Re-render waveform when audio data is edited or a new file is added
@@ -96,12 +94,55 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 
 	}, [audioData, currentFile]);
 
+	// Update line position when displayX changes
 	useEffect(() => {
-		const currentLine = d3.select(svgRef.current).select("line");
-		currentLine.attr("x1", displayX);
-		currentLine.attr("x2", displayX);
+		d3.select(svgRef.current)
+			.select("line")
+			.attr("x1", displayX)
+			.attr("x2", displayX);
 	}, [displayX]);
 
+	// Animate playhead during playback using requestAnimationFrame
+	useEffect(() => {
+		if (!audioRef.current) return;
+
+		let animationId: number;
+
+		function updatePlayhead() {
+			if (!audioRef.current || audioRef.current.paused) return;
+
+			const percentPlayed = audioRef.current.currentTime / audioRef.current.duration;
+			setDisplayX(percentPlayed * SVG_DIMENSIONS.width);
+
+			// Keep the loop going
+			animationId = requestAnimationFrame(updatePlayhead);
+		}
+
+		function handlePlay() {
+			animationId = requestAnimationFrame(updatePlayhead);
+		}
+
+		function handlePause() {
+			cancelAnimationFrame(animationId);
+		}
+
+		function handleEnded() {
+			cancelAnimationFrame(animationId);
+			setDisplayX(0);
+		}
+
+		const audio = audioRef.current;
+		audio.addEventListener('play', handlePlay);
+		audio.addEventListener('pause', handlePause);
+		audio.addEventListener('ended', handleEnded);
+
+		return () => {
+			cancelAnimationFrame(animationId);
+			audio.removeEventListener('play', handlePlay);
+			audio.removeEventListener('pause', handlePause);
+			audio.removeEventListener('ended', handleEnded);
+		};
+	}, [audioRef, SVG_DIMENSIONS.width])
 
 	function getAxisScales(): LinearScales|undefined {
 
@@ -171,6 +212,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 	}
 
 	function handleMouseMove(e: React.MouseEvent<SVGSVGElement>): void {
+		if (!audioRef.current.paused) return;
 		const screenX = e.nativeEvent.offsetX;
 		const rect = svgRef.current?.getBoundingClientRect();
 		if (!rect) {
@@ -181,7 +223,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		setDisplayX(viewBoxX);
 	}
 
-	function getCursorAudioTime() {
+	function getCursorAudioTime(): number|void {
 		if (!svgRef.current) return;
 		const percentSeeked = displayX / SVG_DIMENSIONS.width;
 		return audioRef.current?.duration * percentSeeked;

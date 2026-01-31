@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 # Remove this when deploying
-downsample.mjs
+./src/utils/downsample.mjs
 
 # Editor directories and files
 .vscode/*
