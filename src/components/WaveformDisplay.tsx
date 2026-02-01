@@ -8,11 +8,12 @@ const downsampleWorker = new Worker(
 	{ type: 'module' }
 );
 
-const NUMBER_OF_SAMPLES = 2000;
+const NUMBER_OF_SAMPLES = 4000;
 
 export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioRef }) {
 	const [audioData, setAudioData] = useState<number[]|null>(null);
 	const [displayX, setDisplayX] = useState<number>(0);
+	//const [currentTime, setCurrentTime] = useState(null);
 	const svgRef = useRef<SVGSVGElement>(null);
 
 	const SVG_DIMENSIONS = {
@@ -26,6 +27,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 	}
 
 	useEffect(() => {
+		if (!currentFile || !audioContext) return;
 
 		async function getWaveformData(): Promise<void> {
 			const audioBuffer = await getAudioBuffer();
@@ -40,9 +42,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 				targetLength: NUMBER_OF_SAMPLES,
 			});
 		}
-		if (currentFile && audioContext) {
-			getWaveformData();
-		}
+		getWaveformData();
 	}, [currentFile, audioContext]);
 
 	useEffect(() => {
@@ -54,17 +54,20 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 	// Re-render waveform when audio data is edited or a new file is added
 	useEffect(() => {
 		// Extract all this logic to a custom useRenderWaveform hook
-		if (!currentFile || !audioData) return;
-		const svg = getSvgSelection();
+		if (!currentFile || !audioData || !svgRef.current) return;
+		const svg = d3.select(svgRef?.current);
+		const g = getGroupSelection();
 		const axisScales = getAxisScales() as LinearScales; 
 
 		async function appendAreaPath(scales: LinearScales): Promise<void> {
 			if (!audioData) return;
 			const area = getAreaPath(scales);
-			svg.append("path")
+			g.append("path")
 				.datum(audioData)
+				.attr("id", "waveform-path")
 				.attr("fill", "#ff980A")
 				.attr("d", area(audioData));
+
 		}
 
 		function getAreaPath(scales: LinearScales): d3.Area<number> {
@@ -73,13 +76,12 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 					(d, i) => scales.x(i),
 					() => scales.y(0),
 					(d) => scales.y(d),
-				)
-				.curve(d3.curveStep);
+				);
 			return area;
 		}
 
 		function renderNewLine(): void {
-			svg.append("line")
+			g.append("line")
 				.attr("x1", 0)
 				.attr("y1", SVG_DIMENSIONS.height)
 				.attr("x2", 0)
@@ -88,22 +90,24 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 				.attr("stroke-width", "1px");
 		}
 
-		function createZoom() {
-			const transformBehavior = (event) => {
-				const panSpeed = 2.0;
+		function createZoom(): void {
+			const zoomBehavior = (event) => {
+				const k = event.transform.k;
+				let x = event.transform.x;
+				let y = event.transform.y;
 
-				const t = event.transform;
-				const x = t.x * panSpeed;
-				const y = t.y * panSpeed;
+				if (k === 1.0) {
+					x = 0;
+					y = 0;
+				}
 
-				return `translate(${x}, ${y}) scale(${t.k})`;
+				return `translate(${x}, ${y}) scale(${k})`;
 			}
-			const svg = getSvgSelection();
 			const zoom = d3
 				.zoom<SVGSVGElement, unknown>()
-				.on("zoom", (event) => svg.attr("transform", transformBehavior(event)))
-				.scaleExtent([1, 2])
-				.translateExtent([[0, 0], [SVG_DIMENSIONS.width, SVG_DIMENSIONS.height]]);
+				.on("zoom", (event) => g.attr("transform", zoomBehavior(event)))
+				.scaleExtent([1, 4])
+				.translateExtent([[0, 0], [SVG_DIMENSIONS.width + 100, SVG_DIMENSIONS.height]]);
 
 			svg.call(zoom);
 		}
@@ -118,10 +122,11 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 
 	}, [audioData, currentFile]);
 
-	// Update line position when displayX changes
+	// Update line position and time when displayX changes
 	useEffect(() => {
-		const svg = getSvgSelection();
-			svg.select("line")
+		if (!svgRef.current) return;
+		const g = getGroupSelection();
+			g.select("line")
 				.attr("x1", displayX)
 				.attr("x2", displayX);
 	}, [displayX]);
@@ -239,24 +244,50 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		if (!audioRef.current.paused) return;
 		const screenX = e.nativeEvent.offsetX;
 		const rect = svgRef.current?.getBoundingClientRect();
-		if (!rect) {
-			setDisplayX(e.nativeEvent.offsetX);
+		if (!rect || screenX < 0) {
+			setDisplayX(0);
 			return;
 		}
 		const viewBoxX = (screenX / rect.width) * SVG_DIMENSIONS.width;
 		setDisplayX(viewBoxX);
 	}
 
-	function getCursorAudioTime(): number|void {
-		if (!svgRef.current) return;
+	function handleLeftClick(): void {
+		if (!audioRef.current.paused) {
+			return;
+		}
+		audioRef.current.currentTime = getCursorAudioTime();
+	}
+
+	function getCursorAudioTime(): number {
 		const percentSeeked = displayX / SVG_DIMENSIONS.width;
 		return audioRef.current?.duration * percentSeeked;
 	}
 
-	function getSvgSelection() {
-		return d3.select<SVGSVGElement, unknown>(svgRef.current!);
+	function getFormattedTimestamp(seekTimestamp: number): string {
+		const minutes = Math.floor(seekTimestamp / 60);
+		let seconds = Math.round(seekTimestamp % 60);
+		if (seconds === 60) {
+			seconds = 59;
+		}
+		const formattedTime = `${minutes}:${seconds < 10 ? (`0${seconds}`) : seconds}`;
+		return formattedTime;
 	}
 
+	function getGroupSelection(): d3.Selection<SVGGElement, unknown, null, undefined> {
+		const svg = d3.select<SVGSVGElement, unknown>(svgRef.current!);
+		let group = svg.select<SVGGElement>("g");
+		
+		if (group.empty()) {
+			group = svg.append<SVGGElement>("g");
+		}
+		return group;
+	}
+
+	function checkLoaded(): boolean {
+		const path = d3.select(svgRef.current).select("#waveform-path").node();
+		return path !== null;
+	}
 
 	return (
 		<div className="waveformDisplay">
@@ -265,14 +296,37 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 					Load Default Audio
 				</button>
 			) : (
-				<svg 
-					id="waveform" 
-					viewBox={`0 0 ${SVG_DIMENSIONS.width} ${SVG_DIMENSIONS.height}`} 
-					preserveAspectRatio="xMidYMid slice"
-					ref={svgRef}
-					onMouseMove={(e) => handleMouseMove(e)}
-				>
-				</svg>
+				<>
+					{checkLoaded() && (
+						<div className="display">
+							{audioRef.current.paused && (
+							<span className="seekDisplay display">
+								<h2>
+									Seek: {" "}
+									{getFormattedTimestamp(
+										getCursorAudioTime(),
+									)}
+								</h2>
+							</span>
+							)}
+							<span className="timestampDisplay display">
+								<h2>
+									{getFormattedTimestamp(
+										audioRef.current.currentTime,
+									)}
+								</h2>
+							</span>
+						</div>
+					)}
+					<svg
+						id="waveform"
+						viewBox={`0 0 ${SVG_DIMENSIONS.width} ${SVG_DIMENSIONS.height}`}
+						preserveAspectRatio="xMidYMid slice"
+						ref={svgRef}
+						onMouseMove={(e) => handleMouseMove(e)}
+						onClick={handleLeftClick}
+					></svg>
+				</>
 			)}
 		</div>
 	);
