@@ -13,7 +13,7 @@ const NUMBER_OF_SAMPLES = 4000;
 export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioRef }) {
 	const [audioData, setAudioData] = useState<number[]|null>(null);
 	const [displayX, setDisplayX] = useState<number>(0);
-	//const [currentTime, setCurrentTime] = useState(null);
+	const [selection, setSelection] = useState<Array<number|null> | null>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
 
 	const SVG_DIMENSIONS = {
@@ -171,7 +171,49 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 			audio.removeEventListener('pause', handlePause);
 			audio.removeEventListener('ended', handleEnded);
 		};
-	}, [audioRef, SVG_DIMENSIONS.width])
+	}, [audioRef, SVG_DIMENSIONS.width]);
+
+	useEffect(() => {
+		if (!audioData) return;
+		if (!selection) {
+			d3.select("#start-line").remove();
+			d3.select("#end-line").remove();
+			return;
+		}
+		const [ startX, endX ] = selection;
+		const group = getGroupSelection();
+
+		if (startX) {
+			const startLine = group.select("#start-line");
+			if (startLine.node()) {
+				startLine.remove();
+			}
+			group.append("line")
+				.attr("id", "start-line")
+				.attr("x1", startX)
+				.attr("y1", SVG_DIMENSIONS.height)
+				.attr("x2", startX)
+				.attr("y2", 0)
+				.attr("stroke", "green")
+				.attr("stroke-width", "1px");
+		}
+
+		if (endX) {
+			const endLine = group.select("#end-line");
+			if (endLine.node()) {
+				endLine.remove();
+			}
+			group.append("line")
+				.attr("id", "end-line")
+				.attr("x1", endX)
+				.attr("y1", SVG_DIMENSIONS.height)
+				.attr("x2", endX)
+				.attr("y2", 0)
+				.attr("stroke", "red")
+				.attr("stroke-width", "1px");
+		}
+		
+	}, [selection])
 
 	function getAxisScales(): LinearScales|undefined {
 
@@ -259,6 +301,28 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		audioRef.current.currentTime = getCursorAudioTime();
 	}
 
+	function handleRightClick(e): void {
+		e.preventDefault();
+		const currentX = displayX;
+		if (!audioRef.current.paused) {
+			return;
+		}
+		if (selection) {
+			const [ startX, endX ] = selection;
+			const THRESHOLD = 10;
+			if ((currentX >= startX! - THRESHOLD) && (currentX <= startX! + THRESHOLD) 
+				|| (currentX >= endX! - THRESHOLD) && (currentX <= endX! + THRESHOLD)) {
+				setSelection(null);
+			} else if (currentX < startX!) {
+				setSelection([currentX, endX]);
+			} else {
+				setSelection([startX, currentX]);
+			}
+		} else {
+			setSelection([currentX, null]);
+		}
+	}
+
 	function getCursorAudioTime(): number {
 		const percentSeeked = displayX / SVG_DIMENSIONS.width;
 		return audioRef.current?.duration * percentSeeked;
@@ -325,6 +389,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 						ref={svgRef}
 						onMouseMove={(e) => handleMouseMove(e)}
 						onClick={handleLeftClick}
+						onContextMenu={(e) => handleRightClick(e)}
 					></svg>
 				</>
 			)}

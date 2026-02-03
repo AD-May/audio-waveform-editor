@@ -1,0 +1,20 @@
+---UI---
+1. if user left clicks, the audio will seek to that point in playback: done
+1. add indicator for selection 
+	- if no line with class start is on bar, right clicking will add a green bar with arrow to a specific time on the waveform
+	- if start line already displayed, and time selected is before current start bar, right clicking again will move start bar to current position
+	- if start line already displayed, and time selected is after current start line, right clicking again will add a red bar with arrow to a specific time on waveform
+	- if two lines already on bar (segment already selected) another click will start process back over (end bar removed, start bar moved to new click position)
+2. if start and end bars on svg, get time selection and save to state (selection, setSelection)
+
+---AudioLogic---
+
+1. If there is not a start and end for a selection, lock the slider.
+2. If there are both selection.startTime and selection.endTime values, take selection state Timeframe and add appropriate node and pass the value of that slider to 
+.setValueAtTime(sliderValue, selection startTime) based on prop data from Tooltip.tsx (gain, balance).
+
+
+selection = (point, null) - case 1: add end line if screenX is greater than point (set selection (point, screenX)), case 2: move point if screenX is less than point (set selection (screenX, null))
+selection = (point, point) - case 1: move start point if screenX is less than point[0] or greater than point[1] (set selection (screenX, null))
+if (point, null) or (point, point) and screenX is === point[0] - case 1: set selection = null
+selection = null - case 1: set selection to (screenX, null)
