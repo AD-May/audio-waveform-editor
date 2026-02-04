@@ -8,6 +8,7 @@ export default function App() {
   const [audioSrc, setAudioSrc] = useState<string | undefined>(undefined);
   const [settingInfo, setSettingInfo] = useState<object>({});
   const [audioContext , setAudioContext] = useState<AudioContext|null>(null);
+  const [selection, setSelection] = useState<Array<number | null> | null>(null);
   //const [audioNodes, setAudioNodes]
   const audioRef = useRef<HTMLAudioElement>(null);
   const isAudioConnected = useRef(false);
@@ -52,7 +53,7 @@ export default function App() {
     setAudioContext(newAudioContext);
     isAudioConnected.current = true;
 
-  }, [])
+  }, []);
 
   return (
     <>
@@ -68,6 +69,8 @@ export default function App() {
           currentSettingInfo={settingInfo} 
           audioContext={audioContext}
           audioRef={audioRef}
+          selection={selection}
+          setSelection={setSelection}
         />
       </main>
       <footer>

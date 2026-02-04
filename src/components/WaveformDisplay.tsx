@@ -10,11 +10,17 @@ const downsampleWorker = new Worker(
 
 const NUMBER_OF_SAMPLES = 4000;
 
-export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioRef }) {
+export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioRef, selection, setSelection }) {
 	const [audioData, setAudioData] = useState<number[]|null>(null);
 	const [displayX, setDisplayX] = useState<number>(0);
-	const [selection, setSelection] = useState<Array<number|null> | null>(null);
 	const svgRef = useRef<SVGSVGElement>(null);
+	const hasNullish = () => {
+		let hasNull = true;
+		if (selection) {
+			hasNull = selection.some(element => element === null || element === undefined);
+		}
+		return hasNull;
+	}
 
 	const SVG_DIMENSIONS = {
 		height: 500,
@@ -221,12 +227,12 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 			console.error("Could not get audio channel data to create X/Y Scales.");
 			return undefined
 		}
-		const arrayFromTypedArray = [...audioData];
+		const arrayFromTypedArray = [...audioData!];
 		const minData = d3.min(arrayFromTypedArray) as number;
 		const maxData = d3.max(arrayFromTypedArray) as number;
 		const xScale = d3
 			.scaleLinear()
-			.domain([0, audioData.length])
+			.domain([0, audioData!.length])
 			.range([
 				0,
 				SVG_DIMENSIONS.width,
@@ -298,7 +304,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		if (!audioRef.current.paused) {
 			return;
 		}
-		audioRef.current.currentTime = getCursorAudioTime();
+		audioRef.current.currentTime = getCursorAudioTime(displayX);
 	}
 
 	function handleRightClick(e): void {
@@ -323,8 +329,8 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		}
 	}
 
-	function getCursorAudioTime(): number {
-		const percentSeeked = displayX / SVG_DIMENSIONS.width;
+	function getCursorAudioTime(cursorX: number): number {
+		const percentSeeked = cursorX / SVG_DIMENSIONS.width;
 		return audioRef.current?.duration * percentSeeked;
 	}
 
@@ -368,7 +374,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 								<h2>
 									Seek: {" "}
 									{getFormattedTimestamp(
-										getCursorAudioTime(),
+										getCursorAudioTime(displayX),
 									)}
 								</h2>
 							</span>
@@ -380,6 +386,19 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 									)}
 								</h2>
 							</span>
+							{!hasNullish() && (
+								<span className="segmentDisplay display">
+									<h3>Selection: 
+										<span className="startTime">
+											{` ${getFormattedTimestamp(getCursorAudioTime(selection[0]!))} `}
+										</span>
+										-
+										<span className="endTime">
+											{` ${getFormattedTimestamp(getCursorAudioTime(selection[1]!))}`}
+										</span>
+									</h3>
+								</span>	
+							)}
 						</div>
 					)}
 					<svg
