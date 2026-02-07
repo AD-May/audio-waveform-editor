@@ -42,8 +42,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioCo
 			});
 		}
 		getWaveformData();
-        console.log("Fetching new data");
-	}, [currentFile, audioContext, audioNodes]);
+	}, [currentFile, audioContext]);
 
 	useEffect(() => {
 		downsampleWorker.onmessage = (e) => {
@@ -67,7 +66,6 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioCo
 				.attr("id", "waveform-path")
 				.attr("fill", "#ff980A")
 				.attr("d", area(audioData));
-
 		}
 
 		function getAreaPath(scales: LinearScales): d3.Area<number> {
@@ -115,11 +113,9 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioCo
 		appendAreaPath(axisScales);
 		renderNewLine();
 		createZoom();
-		console.log("created");
 
 		return () => {;
 			svg.selectAll("*").remove();
-			console.log("removed");
 		}
 
 	}, [audioData, currentFile]);

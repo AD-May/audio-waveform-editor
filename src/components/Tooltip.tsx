@@ -8,8 +8,6 @@ export default function Tooltip({ setFile, audioContext, audioRef, setCurrentSet
 	const [error, setError] = useState<string>("");
 	const [displaySlider, setDisplaySlider] = useState<boolean>(false);
 
-	//TODO: Find some way to add the name of the edit and the current slidervalue to the setSliderInfo prop
-
 	function onSelectFile(event: ChangeEvent): void {
 		const files = (event.target as HTMLInputElement).files
 		if (files) {

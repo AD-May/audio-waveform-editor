@@ -106,11 +106,8 @@ export default function App() {
   function handleSlider(e: ChangeEvent): void {
         const target = e.target as HTMLInputElement;
         const currentValue = Number(target.value);
-        console.log("currentSetting in handleSlider:", currentSetting);
-        console.log("entering switch");
 		switch (currentSetting) {
 			case "balance":
-                console.log("inside balance case");
                 target.max = "1";
                 target.min = "-1";
                 target.step = ".25";
@@ -145,7 +142,7 @@ export default function App() {
       <header>
         <h1 className="display-1">Audio Waveform Editor</h1>
         <Tooltip 
-          setFile={setCurrentFile} 
+          setFile={setCurrentFile} // Extract this file logic out to custom hook (useSetFile)
           audioContext={audioContext} 
           audioRef={audioRef} 
           setCurrentSetting={setCurrentSetting} 
@@ -157,7 +154,7 @@ export default function App() {
         <audio ref={audioRef} src={audioSrc}></audio>
         <WaveformDisplay 
           loadDefaultAudio={loadDefaultAudio} 
-          currentFile={currentFile} 
+          currentFile={currentFile} // Extract to the custom hook useSetFile
           audioContext={audioContext}
           audioRef={audioRef}
           selection={selection}
