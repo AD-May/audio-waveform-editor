@@ -4,10 +4,9 @@ import './Tooltip.css';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPause } from '@fortawesome/free-solid-svg-icons';
 
-export default function Tooltip({ setFile, audioContext, setSettingInfo, audioRef }) {
+export default function Tooltip({ setFile, audioContext, audioRef, setCurrentSetting, handleSlider, invalidSelection }) {
 	const [error, setError] = useState<string>("");
 	const [displaySlider, setDisplaySlider] = useState<boolean>(false);
-	const [currentSetting, setCurrentSetting] = useState<string>("");
 
 	//TODO: Find some way to add the name of the edit and the current slidervalue to the setSliderInfo prop
 
@@ -38,10 +37,12 @@ export default function Tooltip({ setFile, audioContext, setSettingInfo, audioRe
 	}
 
 	function handleDisplaySlider(): void {
-		if (displaySlider) {
-			setDisplaySlider(false);
-		} else {
-			setDisplaySlider(true);
+		if (!invalidSelection()) {
+			if (displaySlider) {
+				setDisplaySlider(false);
+			} else {
+				setDisplaySlider(true);
+			}
 		}
 	}
 	
@@ -105,14 +106,9 @@ export default function Tooltip({ setFile, audioContext, setSettingInfo, audioRe
 				<input
 					type="range"
 					className="slider"
-					min="0"
-					max="100"
-					onChange={(e) =>
-						setSettingInfo({
-							currentSetting,
-							value: e.target.value,
-						})
-					}
+					min="-1"
+					max="1"
+					onChange={handleSlider}
 				/>
 			)}
 			<span className="controls">

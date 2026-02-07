@@ -10,17 +10,10 @@ const downsampleWorker = new Worker(
 
 const NUMBER_OF_SAMPLES = 4000;
 
-export default function WaveformDisplay({ loadDefaultAudio, currentFile, currentSettingInfo, audioContext, audioRef, selection, setSelection }) {
+export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioContext, audioRef, selection, setSelection, hasNullish, audioNodes }) {
 	const [audioData, setAudioData] = useState<number[]|null>(null);
 	const [displayX, setDisplayX] = useState<number>(0);
 	const svgRef = useRef<SVGSVGElement>(null);
-	const hasNullish = () => {
-		let hasNull = true;
-		if (selection) {
-			hasNull = selection.some(element => element === null || element === undefined);
-		}
-		return hasNull;
-	}
 
 	const SVG_DIMENSIONS = {
 		height: 500,
@@ -49,7 +42,8 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 			});
 		}
 		getWaveformData();
-	}, [currentFile, audioContext]);
+        console.log("Fetching new data");
+	}, [currentFile, audioContext, audioNodes]);
 
 	useEffect(() => {
 		downsampleWorker.onmessage = (e) => {
@@ -121,9 +115,11 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, current
 		appendAreaPath(axisScales);
 		renderNewLine();
 		createZoom();
+		console.log("created");
 
 		return () => {;
 			svg.selectAll("*").remove();
+			console.log("removed");
 		}
 
 	}, [audioData, currentFile]);
