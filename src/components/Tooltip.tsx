@@ -94,7 +94,7 @@ export default function Tooltip({ setFile, audioContext, audioRef, setCurrentSet
 					aria-label="volume button"
 					onClick={() => {
 						handleDisplaySlider();
-						setCurrentSetting("volume");
+						setCurrentSetting("gain");
 					}}
 				>
 					Volume
