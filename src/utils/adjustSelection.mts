@@ -8,7 +8,8 @@ interface AudioData {
     data: number[],
 }
 
-function adjustSelection(indices: SelectionBounds, audioData: AudioData, adjustmentValue: number) {
+function adjustSelection(indices: SelectionBounds, audioData: AudioData, adjustmentValue: number): number[] {
+    
     let currentValue;
     let adjustedData = [];
     for (let i = 0; i < audioData.data.length; i++) {

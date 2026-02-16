@@ -12,7 +12,8 @@ dist
 dist-ssr
 *.local
 # Remove this when deploying
-./src/utils/downsample.mjs
+# Ignore compiled .tsx files
+*.mjs 
 
 # Editor directories and files
 .vscode/*

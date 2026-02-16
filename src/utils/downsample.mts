@@ -8,7 +8,7 @@ function downsample(data: Float32Array, targetLength: number): number[] | void {
     for (let i = 0; i <= data.length - chunkSize; i++) {
         if (currentChunk.length > 0 && i % chunkSize === 0) {
             const chunkAverage = mean(currentChunk);
-            result.push(chunkAverage);
+            result.push(chunkAverage!);
             currentChunk = [];
         }
         currentChunk.push(data[i]);

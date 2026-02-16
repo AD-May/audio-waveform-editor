@@ -2,7 +2,12 @@ import './WaveformDisplay.css';
 import { useRef, useState, useEffect } from 'react';
 import * as d3 from 'd3';
 
-export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, currentFile, selection, setSelection, nullSelection, svgDimensions, audioData, getAudioTime, currentTime, audioContext, setCurrentTime, seek, playing }) {
+const SVG_DIMENSIONS = {
+	height: 500,
+	width: 700,
+};
+
+export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, selection, setSelection, nullSelection, audioData, getAudioTime, currentTime, audioContext, setCurrentTime, seek, playing }) {
 	const [displayX, setDisplayX] = useState<number>(0);
 	const svgRef = useRef<SVGSVGElement>(null);
 
@@ -14,10 +19,11 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 	// Re-render waveform when audio data is edited or a new file is added
 	useEffect(() => {
 		// Extract all this logic to a custom useRenderWaveform hook
-		if (!currentFile || !audioData || !svgRef.current) return;
+		if (!audioData || !svgRef.current) return;
 		const svg = d3.select(svgRef?.current);
 		const g = getGroupSelection();
 		const axisScales = getAxisScales() as LinearScales; 
+        initializeGradient("#ffcc80", "#ff6a00");
 
 		async function appendAreaPath(scales: LinearScales): Promise<void> {
 			if (!audioData) return;
@@ -25,7 +31,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 			g.append("path")
 				.datum(audioData)
 				.attr("id", "waveform-path")
-				.attr("fill", "#ff980A")
+				.attr("fill", "url(#areaGradient)")
 				.attr("d", area(audioData));
 		}
 
@@ -41,8 +47,9 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 
 		function renderNewLine(): void {
 			g.append("line")
+                .attr("id", "seek-line")
 				.attr("x1", 0)
-				.attr("y1", svgDimensions.height)
+				.attr("y1", SVG_DIMENSIONS.height)
 				.attr("x2", 0)
 				.attr("y2", 0)
 				.attr("stroke", "blue")
@@ -66,7 +73,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 				.zoom<SVGSVGElement, unknown>()
 				.on("zoom", (event) => g.attr("transform", zoomBehavior(event)))
 				.scaleExtent([1, 4])
-				.translateExtent([[0, 0], [svgDimensions.width + 100, svgDimensions.height]]);
+				.translateExtent([[0, 0], [SVG_DIMENSIONS.width + 100, SVG_DIMENSIONS.height]]);
 
 			svg.call(zoom);
 		}
@@ -76,15 +83,16 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 		createZoom();
 
 		return () => {;
-			svg.selectAll("*").remove();
+			svg.select("path").remove();
+            svg.select("#seek-line").remove();
 		}
 
-	}, [audioData, currentFile]);
+	}, [audioData]);
 
 	useEffect(() => {
 		if (!svgRef.current) return;
 		const g = getGroupSelection();
-			g.select("line")
+			g.select("#seek-line")
 				.attr("x1", displayX)
 				.attr("x2", displayX);
 	}, [displayX]);
@@ -94,8 +102,8 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 		if (!audioData || !audioDurationRef.current) return;
 
 		const percentPlayed = currentTime / audioDurationRef.current;
-		setDisplayX(percentPlayed * svgDimensions.width);
-	}, [currentTime, svgDimensions.width]);
+		setDisplayX(percentPlayed * SVG_DIMENSIONS.width);
+	}, [currentTime, SVG_DIMENSIONS.width]);
 
 	useEffect(() => {
 		if (!audioData) return;
@@ -115,7 +123,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 			group.append("line")
 				.attr("id", "start-line")
 				.attr("x1", startX)
-				.attr("y1", svgDimensions.height)
+				.attr("y1", SVG_DIMENSIONS.height)
 				.attr("x2", startX)
 				.attr("y2", 0)
 				.attr("stroke", "green")
@@ -130,7 +138,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 			group.append("line")
 				.attr("id", "end-line")
 				.attr("x1", endX)
-				.attr("y1", svgDimensions.height)
+				.attr("y1", SVG_DIMENSIONS.height)
 				.attr("x2", endX)
 				.attr("y2", 0)
 				.attr("stroke", "red")
@@ -141,7 +149,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 
 	function getAxisScales(): LinearScales|undefined {
 
-		if (!audioData && currentFile !== null) {
+		if (!audioData) {
 			console.error("Could not get audio channel data to create X/Y Scales.");
 			return undefined
 		}
@@ -153,13 +161,13 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 			.domain([0, audioData!.length])
 			.range([
 				0,
-				svgDimensions.width,
+				SVG_DIMENSIONS.width,
 			]);
 		const yScale = d3
 			.scaleLinear()
 			.domain([minData, maxData])
 			.range([
-				svgDimensions.height,
+				SVG_DIMENSIONS.height,
 				0,
 			]);
 
@@ -175,7 +183,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 			setDisplayX(0);
 			return;
 		}
-		const viewBoxX = (screenX / rect.width) * svgDimensions.width;
+		const viewBoxX = (screenX / rect.width) * SVG_DIMENSIONS.width;
 		setDisplayX(viewBoxX);
 	}
 
@@ -234,6 +242,26 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 		return group;
 	}
 
+    function initializeGradient(innerColor: string, outerColor: string): void {
+        const svg = d3.select<SVGSVGElement, unknown>(svgRef.current!);
+        const defs = svg.append("defs");
+        const linearGradient = defs.append("linearGradient")
+            .attr("id", "areaGradient") // Will use this to make a gradient
+            .attr("x1", "0%")
+            .attr("y1", "0%")
+            .attr("x2", "0%")
+            .attr("y2", "100%");
+
+        linearGradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", `${innerColor}`);
+
+        linearGradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", `${outerColor}`);
+
+    }
+
 	function checkLoaded(): boolean {
 		const path = d3.select(svgRef.current).select("#waveform-path").node();
 		return path !== null;
@@ -241,7 +269,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 
 	return (
 		<div className="waveformDisplay">
-			{!currentFile ? (
+			{!audioData ? (
 				<button className="defaultAudioBtn" onClick={loadDefaultAudio}>
 					Load Default Audio
 				</button>
@@ -286,7 +314,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, cu
 					)}
 					<svg
 						id="waveform"
-						viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
+						viewBox={`0 0 ${SVG_DIMENSIONS.width} ${SVG_DIMENSIONS.height}`}
 						preserveAspectRatio="xMidYMid slice"
 						ref={svgRef}
 						onMouseMove={(e) => handleMouseMove(e)}

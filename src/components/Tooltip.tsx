@@ -4,7 +4,7 @@ import './Tooltip.css';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPause } from '@fortawesome/free-solid-svg-icons';
 
-export default function Tooltip({ setFile, audioContext, setCurrentSetting, handleSlider, invalidSelection, setPlaying }) {
+export default function Tooltip({ setFile, audioContext, currentSetting, setCurrentSetting, handleSlider, invalidSelection, setPlaying }) {
 	const [error, setError] = useState<string>("");
 	const [displaySlider, setDisplaySlider] = useState<boolean>(false);
 
@@ -47,7 +47,7 @@ export default function Tooltip({ setFile, audioContext, setCurrentSetting, hand
 
     return (
 		<div className="tooltipContainer">
-			<span className="upload-container">
+			<span className="uploadContainer">
 				<label
 					id="audio-upload-label"
 					htmlFor="audio-file-select"
@@ -76,7 +76,7 @@ export default function Tooltip({ setFile, audioContext, setCurrentSetting, hand
 					aria-label="balance button"
 					onClick={() => {
 						handleDisplaySlider();
-						setCurrentSetting("balance");
+						setCurrentSetting("Balance");
 					}}
 				>
 					Balance
@@ -94,20 +94,25 @@ export default function Tooltip({ setFile, audioContext, setCurrentSetting, hand
 					aria-label="volume button"
 					onClick={() => {
 						handleDisplaySlider();
-						setCurrentSetting("gain");
+						setCurrentSetting("Gain");
 					}}
 				>
 					Volume
 				</button>
 			</span>
 			{displaySlider && (
+            <>
+                <label htmlFor="slider" id="slider-label">{`${currentSetting}:`}</label>
 				<input
 					type="range"
+                    id="slider"
 					className="slider"
 					min="-1"
 					max="1"
 					onChange={handleSlider}
+                    aria-labelledby="slider-label"
 				/>
+            </>
 			)}
 			<span className="controls">
 				<button

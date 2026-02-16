@@ -126,7 +126,7 @@ export default function App() {
         if (!audioData) return; 
         let sourceNode: AudioBufferSourceNode|undefined;
         (async () => {
-            sourceNode = await createNewSourceNode();
+            sourceNode = await createNewSourceNode(currentPlaybackTime);
         })();
         if (typeof sourceNode === "undefined") return;
 
@@ -136,7 +136,7 @@ export default function App() {
 
     useEffect(() => {
         if (!audioContext) return;
-        let intervalId;
+        let intervalId: number;
         if (playing) {
             intervalId = setInterval(() => {
                 setCurrentPlaybackTime((t) => t >= audioDurationRef.current ? 0 : t + 1)
@@ -233,13 +233,13 @@ export default function App() {
             const target = e.target as HTMLInputElement;
             const currentValue = Number(target.value);
             switch (currentSetting) {
-                case "balance":
+                case "Balance":
                     target.max = "1";
                     target.min = "-1";
                     target.step = ".25";
                     panAudio(currentValue);
                     break;
-                case "gain":
+                case "Gain":
                     target.max = "2";
                     target.min = "0";
                     target.step = ".20";
@@ -250,7 +250,7 @@ export default function App() {
 
     function panAudio(value: number) {
         const { selectedNode, newAudioNodes } = createNode({ 
-            name: "balance", 
+            name: "Balance", 
             node: new StereoPannerNode(audioContext!),
         });
         const pannerNode = selectedNode!.node as StereoPannerNode;
@@ -260,7 +260,7 @@ export default function App() {
 
     function changeVolume(value: number) {
         const { selectedNode, newAudioNodes } = createNode({
-            name: "gain",
+            name: "Gain",
             node: new GainNode(audioContext!),
         });
         const gainNode = selectedNode!.node as GainNode;
@@ -345,7 +345,6 @@ export default function App() {
         param.setValueAtTime(value, endTime);
     }
 
-    // TODO: Refactor using splice/join with indices (more performant)
     function modifySelectionData(adjustmentValue: number) {
         if (!selection) return;
         const startIndexData = Math.round(selection[0] / SVG_DIMENSIONS.width * audioData!.length);
@@ -377,6 +376,7 @@ export default function App() {
             <Tooltip 
                 setFile={setCurrentFile} // Extract this file logic out to custom hook (useSetFile)
                 audioContext={audioContext}
+                currentSetting={currentSetting}
                 setCurrentSetting={setCurrentSetting} 
                 handleSlider={handleSlider}
                 invalidSelection={checkNullSelection}
@@ -386,12 +386,10 @@ export default function App() {
         <main>
             <WaveformDisplay 
                 loadDefaultAudio={loadDefaultAudio} 
-                currentFile={currentFile} // Extract to the custom hook useSetFile
                 audioData={visualData}
                 selection={selection}
                 setSelection={setSelection}
                 nullSelection={checkNullSelection}
-                svgDimensions={SVG_DIMENSIONS}
                 getAudioTime={getXAudioTime}
                 currentTime={currentPlaybackTime}
                 setCurrentTime={setCurrentPlaybackTime}
