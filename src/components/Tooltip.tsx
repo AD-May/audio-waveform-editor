@@ -4,7 +4,7 @@ import './Tooltip.css';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPause } from '@fortawesome/free-solid-svg-icons';
 
-export default function Tooltip({ setFile, audioContext, audioRef, setCurrentSetting, handleSlider, invalidSelection }) {
+export default function Tooltip({ setFile, audioContext, setCurrentSetting, handleSlider, invalidSelection, setPlaying }) {
 	const [error, setError] = useState<string>("");
 	const [displaySlider, setDisplaySlider] = useState<boolean>(false);
 
@@ -26,11 +26,11 @@ export default function Tooltip({ setFile, audioContext, audioRef, setCurrentSet
 
 	function handleAudioPlayback(): void {
 		if (audioContext.state === "running") {
-			audioContext.suspend();
-			audioRef.current.pause();
+            audioContext.suspend()
+            setPlaying(false);
 		} else {
-			audioContext.resume();
-			audioRef.current.play();
+            audioContext.resume();
+            setPlaying(true)
 		}
 	}
 

@@ -1,20 +1,20 @@
-function adjustSelection(indices, baseAudioData, adjustmentValue) {
+function adjustSelection(indices, audioData, adjustmentValue) {
     var currentValue;
     var adjustedData = [];
-    for (var i = 0; i < baseAudioData.length; i++) {
+    for (var i = 0; i < audioData.data.length; i++) {
         if (i >= indices.startIndex && i <= indices.endIndex) {
-            currentValue = adjustmentValue * baseAudioData[i];
+            currentValue = adjustmentValue * audioData.data[i];
         }
         else {
-            currentValue = baseAudioData[i];
+            currentValue = audioData.data[i];
         }
         adjustedData.push(currentValue);
     }
     return adjustedData;
 }
 self.onmessage = function (e) {
-    var _a = e.data, indices = _a.indices, baseAudioData = _a.baseAudioData, adjustmentValue = _a.adjustmentValue;
-    var adjustedData = adjustSelection(indices, baseAudioData, adjustmentValue);
-    self.postMessage(adjustedData);
+    var _a = e.data, indices = _a.indices, audioData = _a.audioData, adjustmentValue = _a.adjustmentValue;
+    var adjustedData = adjustSelection(indices, audioData, adjustmentValue);
+    self.postMessage({ type: audioData.type, data: adjustedData });
 };
 export {};

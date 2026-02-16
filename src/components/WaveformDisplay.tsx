@@ -2,7 +2,7 @@ import './WaveformDisplay.css';
 import { useRef, useState, useEffect } from 'react';
 import * as d3 from 'd3';
 
-export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioRef, selection, setSelection, hasNullish, svgDimensions, audioData, getAudioTime }) {
+export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, currentFile, selection, setSelection, nullSelection, svgDimensions, audioData, getAudioTime, currentTime, audioContext, setCurrentTime, seek, playing }) {
 	const [displayX, setDisplayX] = useState<number>(0);
 	const svgRef = useRef<SVGSVGElement>(null);
 
@@ -89,47 +89,13 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioRe
 				.attr("x2", displayX);
 	}, [displayX]);
 
-	// Animate playhead during playback using requestAnimationFrame
+	// Update playhead position based on current playback time
 	useEffect(() => {
-		if (!audioRef.current) return;
+		if (!audioData || !audioDurationRef.current) return;
 
-		let animationId: number;
-
-		function updatePlayhead() {
-			if (!audioRef.current || audioRef.current.paused) return;
-
-			const percentPlayed = audioRef.current.currentTime / audioRef.current.duration;
-			setDisplayX(percentPlayed * svgDimensions.width);
-
-			// Keep the loop going
-			animationId = requestAnimationFrame(updatePlayhead);
-		}
-
-		function handlePlay() {
-			animationId = requestAnimationFrame(updatePlayhead);
-		}
-
-		function handlePause() {
-			cancelAnimationFrame(animationId);
-		}
-
-		function handleEnded() {
-			cancelAnimationFrame(animationId);
-			setDisplayX(0);
-		}
-
-		const audio = audioRef.current;
-		audio.addEventListener('play', handlePlay);
-		audio.addEventListener('pause', handlePause);
-		audio.addEventListener('ended', handleEnded);
-
-		return () => {
-			cancelAnimationFrame(animationId);
-			audio.removeEventListener('play', handlePlay);
-			audio.removeEventListener('pause', handlePause);
-			audio.removeEventListener('ended', handleEnded);
-		};
-	}, [audioRef, svgDimensions.width]);
+		const percentPlayed = currentTime / audioDurationRef.current;
+		setDisplayX(percentPlayed * svgDimensions.width);
+	}, [currentTime, svgDimensions.width]);
 
 	useEffect(() => {
 		if (!audioData) return;
@@ -202,7 +168,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioRe
 	}	
 
 	function handleMouseMove(e: React.MouseEvent<SVGSVGElement>): void {
-		if (!audioRef.current.paused) return;
+		if (audioContext.state === "running") return;
 		const screenX = e.nativeEvent.offsetX;
 		const rect = svgRef.current?.getBoundingClientRect();
 		if (!rect || screenX < 0) {
@@ -213,28 +179,34 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioRe
 		setDisplayX(viewBoxX);
 	}
 
-	function handleLeftClick(): void {
-		if (!audioRef.current.paused) {
+	async function handleLeftClick(): Promise<void> {
+		if (audioContext.state === "running") {
 			return;
 		}
-		audioRef.current.currentTime = getAudioTime(displayX);
+        
+        const audioTime = await getAudioTime(displayX);
+        seek(audioTime);
+		setCurrentTime(audioTime);
 	}
 
 	function handleRightClick(e): void {
 		e.preventDefault();
 		const currentX = displayX;
-		if (!audioRef.current.paused) {
+		if (audioContext.state === "running") {
 			return;
 		}
 		if (selection) {
 			const [ startX, endX ] = selection;
-			const THRESHOLD = 10;
+			const THRESHOLD = 10; // Amount of space around click in px that allows for selection
+            // If right click on selection line, selection will be reset
 			if ((currentX >= startX! - THRESHOLD) && (currentX <= startX! + THRESHOLD) 
 				|| (currentX >= endX! - THRESHOLD) && (currentX <= endX! + THRESHOLD)) {
 				setSelection(null);
+            // Move start of selection if right click further left than it
 			} else if (currentX < startX!) {
 				setSelection([currentX, endX]);
 			} else {
+                // Move/add end selection if right click further right than start of selection
 				setSelection([startX, currentX]);
 			}
 		} else {
@@ -277,26 +249,29 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioRe
 				<>
 					{checkLoaded() && (
 						<div className="display">
-							{audioRef.current.paused && (
-							<span className="seekDisplay display">
-								<h2>
-									Seek: {" "}
-									{getFormattedTimestamp(
-										getAudioTime(displayX),
+							{audioContext.state === "suspended" && (
+								<span className="seekDisplay display">
+									{playing === false && (
+										<h2>
+											Seek:{" "}
+											{getFormattedTimestamp(
+												getAudioTime(displayX),
+											)}
+										</h2>
 									)}
-								</h2>
-							</span>
+								</span>
 							)}
-							<span className="timestampDisplay display">
-								<h2>
-									{getFormattedTimestamp(
-										audioRef.current.currentTime,
-									)}
-								</h2>
-							</span>
-							{!hasNullish() && (
+							{playing && (
+								<span className="timestampDisplay display">
+									<h2>
+										{getFormattedTimestamp(currentTime)}
+									</h2>
+								</span>
+							)}
+							{!nullSelection() && (
 								<span className="segmentDisplay display">
-									<h3>Selection: 
+									<h3>
+										Selection:
 										<span className="startTime">
 											{` ${getFormattedTimestamp(getAudioTime(selection[0]!))} `}
 										</span>
@@ -305,7 +280,7 @@ export default function WaveformDisplay({ loadDefaultAudio, currentFile, audioRe
 											{` ${getFormattedTimestamp(getAudioTime(selection[1]!))}`}
 										</span>
 									</h3>
-								</span>	
+								</span>
 							)}
 						</div>
 					)}

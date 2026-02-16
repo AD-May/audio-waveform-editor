@@ -3,14 +3,19 @@ interface SelectionBounds {
     endIndex: number;
 }
 
-function adjustSelection(indices: SelectionBounds, baseAudioData: number[], adjustmentValue: number) {
+interface AudioData {
+    type: string,
+    data: number[],
+}
+
+function adjustSelection(indices: SelectionBounds, audioData: AudioData, adjustmentValue: number) {
     let currentValue;
     let adjustedData = [];
-    for (let i = 0; i < baseAudioData.length; i++) {
+    for (let i = 0; i < audioData.data.length; i++) {
         if (i >= indices.startIndex && i <= indices.endIndex) {
-            currentValue = adjustmentValue * baseAudioData[i];
+            currentValue = adjustmentValue * audioData.data[i];
         } else {
-            currentValue = baseAudioData[i];
+            currentValue = audioData.data[i];
         }
         adjustedData.push(currentValue);
     }
@@ -18,7 +23,7 @@ function adjustSelection(indices: SelectionBounds, baseAudioData: number[], adju
 }
 
 self.onmessage = (e) => {
-	const { indices, baseAudioData, adjustmentValue } = e.data;
-	const adjustedData = adjustSelection(indices, baseAudioData, adjustmentValue);
-	self.postMessage(adjustedData);
+	const { indices, audioData, adjustmentValue } = e.data;
+	const adjustedData = adjustSelection(indices, audioData, adjustmentValue);
+	self.postMessage({ type: audioData.type, data: adjustedData });
 };
