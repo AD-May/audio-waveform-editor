@@ -145,7 +145,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 				.attr("stroke-width", "1px");
 		}
 		
-	}, [selection])
+	}, [selection]);
 
 	function getAxisScales(): LinearScales|undefined {
 

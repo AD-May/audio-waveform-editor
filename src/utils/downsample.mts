@@ -1,28 +1,37 @@
 import { mean } from 'd3';
 
-function downsample(data: Float32Array, targetLength: number): number[] | void {
-    const result: number[] | undefined = [];
-    const chunkSize = Math.floor(data.length / targetLength);
-    let currentChunk = [];
-
-    for (let i = 0; i <= data.length - chunkSize; i++) {
-        if (currentChunk.length > 0 && i % chunkSize === 0) {
-            const chunkAverage = mean(currentChunk);
-            result.push(chunkAverage!);
-            currentChunk = [];
+export function downsample(data: Float32Array, targetLength: number): number[] | undefined {
+    try {
+        if (data.length === 0) {
+            throw new Error("Data array cannot be empty");
         }
-        currentChunk.push(data[i]);
-    }
-    if (typeof result === "undefined") {
-        console.error("Audio source could not be downsampled for visualization.");
-        return;
-    }
+        if (targetLength > data.length) {
+            throw new Error("Downsample targetLength cannot be greater than the data's length");
+        }
+        if (targetLength <= 0) {
+            throw new Error("targetLength cannot be less than or equal to zero");
+        }
+        const result: number[] = [];
 
-    return result;
+        for (let i = 0; i < targetLength; i++) {
+            const start = Math.round(i * data.length / targetLength);
+            const end = Math.round((i + 1) * data.length / targetLength);
+            const chunk = data.slice(start, end);
+            result.push(mean(chunk)!);
+        }
+
+        return result;
+
+    } catch (err) {
+        console.error("Audio source could not be downsampled for visualization: ", err);
+        throw new Error(err);
+    }
 }
 
-self.onmessage = (e) => {
-    const { data, targetLength } = e.data;
-    const downsampledResult = downsample(data, targetLength);
-    self.postMessage(downsampledResult);
-};
+if (typeof self !== "undefined") {
+    self.onmessage = (e) => {
+		const { data, targetLength } = e.data;
+		const downsampledResult = downsample(data, targetLength);
+		self.postMessage(downsampledResult);
+	};
+}

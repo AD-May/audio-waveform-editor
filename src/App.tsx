@@ -2,6 +2,7 @@ import './App.css';
 import Tooltip from './components/Tooltip.tsx';
 import WaveformDisplay from './components/WaveformDisplay.tsx';
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
+import type { SelectionBounds } from './types/types.mts';
 // TODO Move related state to reducer or custom hooks, add try/catch error handling, and add unit/integration tests
 
 // TODO: Make sure URL path is corrected when we move .mjs file from build into dist dir
@@ -25,7 +26,7 @@ const NUMBER_OF_SAMPLES = 4000;
 export default function App() {
     const [currentFile, setCurrentFile] = useState<File | null>(null);
     const [audioData, setAudioData] = useState<Float32Array | null>(null);
-    const [visualData, setVisualData] = useState<number[] | null>(null);
+    const [visualData, setVisualData] = useState<Float32Array | null>(null);
     const [audioContext , setAudioContext] = useState<AudioContext | null>(null);
     const [selection, setSelection] = useState<Array<number | null> | null>(null);
     const [audioNodes, setAudioNodes] = useState<Node[]>([]);
@@ -86,6 +87,7 @@ export default function App() {
         if (isAudioConnected.current) return;
 
 		const newAudioContext = new AudioContext();
+        // Stop AudioContext from playing immediately
         newAudioContext.suspend();
 
 		setAudioContext(newAudioContext);
@@ -229,7 +231,7 @@ export default function App() {
 		return data.filter((data) => data !== undefined);
 	}
 
-    function handleSlider(e: ChangeEvent): void {
+    function handleEdit(e: ChangeEvent): void {
             const target = e.target as HTMLInputElement;
             const currentValue = Number(target.value);
             switch (currentSetting) {
@@ -245,6 +247,8 @@ export default function App() {
                     target.step = ".20";
                     changeVolume(currentValue);
                     break;
+                case "Trim":
+                    modifySelectionData();
             }
     }
 
@@ -325,6 +329,13 @@ export default function App() {
         return node.node as T;
     }
 
+    function getBufferIndices(data: Float32Array): SelectionBounds | void {
+        if (checkNullSelection()) return;
+        const startIndex = Math.round((selection![0]! / SVG_DIMENSIONS.width) * data.length);
+        const endIndex = Math.round((selection![1]! / SVG_DIMENSIONS.width) * data.length);
+        return { startIndex, endIndex };
+    }
+
     function seek(time: number): void {
         const oldSourceNode = getAudioNode<AudioBufferSourceNode>("source");
         if (!oldSourceNode) return;
@@ -345,22 +356,20 @@ export default function App() {
         param.setValueAtTime(value, endTime);
     }
 
-    function modifySelectionData(adjustmentValue: number) {
+    function modifySelectionData(adjustmentValue?: number) {
         if (!selection) return;
-        const startIndexData = Math.round(selection[0] / SVG_DIMENSIONS.width * audioData!.length);
-        const endIndexData = Math.round(selection[1] / SVG_DIMENSIONS.width * audioData!.length);
-        const startIndexVisual = Math.round(selection[0] / SVG_DIMENSIONS.width * visualData!.length);
-        const endIndexVisual = Math.round(selection[1] / SVG_DIMENSIONS.width * visualData!.length);
+        const audioIndices = getBufferIndices(audioData!);
+        const visualIndices = getBufferIndices(visualData!);
 
         selectionWorker.postMessage({
-			indices: { startIndex: startIndexData, endIndex: endIndexData },
+			indices: { startIndex: audioIndices?.startIndex, endIndex: audioIndices?.endIndex },
             audioData: { type: "audio", data: audioData },
-            adjustmentValue,
+            adjustmentValue: adjustmentValue ?? undefined,
 		});
         selectionWorker.postMessage({
-            indices: { startIndex: startIndexVisual, endIndex: endIndexVisual },
-            audioData: { type: "visual", data: baseDataRef.current },
-            adjustmentValue,
+            indices: { startIndex: visualIndices?.startIndex, endIndex: visualIndices?.endIndex },
+            audioData: { type: "visual", data: adjustmentValue ? visualData : baseDataRef.current },
+            adjustmentValue: adjustmentValue ?? undefined,
         });
     }
 
@@ -378,7 +387,7 @@ export default function App() {
                 audioContext={audioContext}
                 currentSetting={currentSetting}
                 setCurrentSetting={setCurrentSetting} 
-                handleSlider={handleSlider}
+                handleEdit={handleEdit}
                 invalidSelection={checkNullSelection}
                 setPlaying={setPlaying}
             />

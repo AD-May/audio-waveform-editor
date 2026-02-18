@@ -2,9 +2,9 @@ import type { ChangeEvent } from 'react';
 import { useState } from 'react';
 import './Tooltip.css';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faPause } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faScissors } from '@fortawesome/free-solid-svg-icons';
 
-export default function Tooltip({ setFile, audioContext, currentSetting, setCurrentSetting, handleSlider, invalidSelection, setPlaying }) {
+export default function Tooltip({ setFile, audioContext, currentSetting, setCurrentSetting, handleEdit, invalidSelection, setPlaying }) {
 	const [error, setError] = useState<string>("");
 	const [displaySlider, setDisplaySlider] = useState<boolean>(false);
 
@@ -85,6 +85,10 @@ export default function Tooltip({ setFile, audioContext, currentSetting, setCurr
 					id="trim-btn"
 					className="btn btn-light"
 					aria-label="trim button"
+                    onClick={() => {
+                        setDisplaySlider(false);
+                        setCurrentSetting(currentSetting === "Trim" ? "" : "Trim");
+                    }}
 				>
 					Trim
 				</button>
@@ -109,11 +113,21 @@ export default function Tooltip({ setFile, audioContext, currentSetting, setCurr
 					className="slider"
 					min="-1"
 					max="1"
-					onChange={handleSlider}
+					onChange={handleEdit}
                     aria-labelledby="slider-label"
 				/>
             </>
 			)}
+            {currentSetting === "Trim" && (
+                <button
+                    id="trim-btn"
+                    className="btn btn-warning"
+                    onClick={handleEdit}
+                >
+                    Trim{" "}
+                    <FontAwesomeIcon icon={faScissors} />
+                </button>
+            )}
 			<span className="controls">
 				<button
 					id="play-btn"
