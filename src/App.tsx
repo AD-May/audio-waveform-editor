@@ -33,13 +33,18 @@ export default function App() {
     const [currentSetting, setCurrentSetting] = useState<string>("")
     const [currentPlaybackTime, setCurrentPlaybackTime] = useState<number>(0);
     const [playing, setPlaying] = useState<boolean>(false);
-    const baseDataRef = useRef<number[] | null>(null);
     const isAudioConnected = useRef<boolean>(false);
     const audioDurationRef = useRef<number | null>(null);
+
+    interface Edit {
+        startX: number;
+        endX: number;
+    }
 
     interface Node {
         name: string;
         node: AudioNode;
+        edits?: Edit[] | null;
     }
 
     interface NodeCreationInfo {
@@ -71,7 +76,6 @@ export default function App() {
 
     useEffect(() => {
         downsampleWorker.onmessage = (e) => {
-            baseDataRef.current = e.data;
             setVisualData(e.data);
         };
 
@@ -264,9 +268,9 @@ export default function App() {
 
     function changeVolume(value: number) {
         const { selectedNode, newAudioNodes } = createNode({
-            name: "Gain",
-            node: new GainNode(audioContext!),
-        });
+			name: "Gain",
+			node: new GainNode(audioContext!),
+		});
         const gainNode = selectedNode!.node as GainNode;
         gainNode.gain.value = value;
         setEditTimes(gainNode.gain, value);
@@ -286,6 +290,8 @@ export default function App() {
         const newNode = {
             name: "source",
             node: sourceNode,
+            // if source node, set edits to null
+            edits: null,
         };
 
         if (audioNodes.length === 0) {
@@ -313,6 +319,12 @@ export default function App() {
             selectedNode = {
                 name: currentNode.name,
                 node: currentNode.node,
+                edits: [
+                    { 
+                        startX: selection![0] as number, 
+                        endX: selection![1] as number,
+                    }
+                ],
             };
             newAudioNodes = [...audioNodes, selectedNode];
         } else {
@@ -368,7 +380,7 @@ export default function App() {
 		});
         selectionWorker.postMessage({
             indices: { startIndex: visualIndices?.startIndex, endIndex: visualIndices?.endIndex },
-            audioData: { type: "visual", data: adjustmentValue ? visualData : baseDataRef.current },
+            audioData: { type: "visual", data: visualData},
             adjustmentValue: adjustmentValue ?? undefined,
         });
     }

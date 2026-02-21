@@ -46,5 +46,5 @@ describe("return value", () => {
         const targetLength = 5;
         const result = downsample(data, targetLength);
         expect(result?.length === targetLength);
-    })
+    });
 });
