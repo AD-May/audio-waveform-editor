@@ -4,7 +4,7 @@ import './Tooltip.css';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPause, faScissors } from '@fortawesome/free-solid-svg-icons';
 
-export default function Tooltip({ setFile, audioContext, currentSetting, setCurrentSetting, handleEdit, invalidSelection, setPlaying }) {
+export default function Tooltip({ setFile, audioContext, getDownloadURL, currentSetting, setCurrentSetting, handleEdit, invalidSelection, setPlaying }) {
 	const [error, setError] = useState<string>("");
 	const [displaySlider, setDisplaySlider] = useState<boolean>(false);
 
@@ -141,13 +141,15 @@ export default function Tooltip({ setFile, audioContext, currentSetting, setCurr
 				</button>
 			</span>
 			<span className="exportContainer">
-				<button
+				<a 
 					id="export-btn"
 					className="btn btn-success"
 					aria-label="export button"
+                    download="edited_audio.wav"
+                    onMouseDown={getDownloadURL}
 				>
 					Export
-				</button>
+				</a>
 			</span>
 		</div>
 	);
