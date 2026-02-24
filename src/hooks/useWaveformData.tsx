@@ -22,10 +22,12 @@ const NUMBER_OF_SAMPLES = 4000;
 export function useWaveformData(currentFile: File | null, audioContext: AudioContext | undefined, selection: number[], audioDurationRef: Ref<number>) {
     const [audioData, setAudioData] = useState<Float32Array | null>(null);
 	const [visualData, setVisualData] = useState<Float32Array | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     useEffect(() => {
             if (!currentFile || !audioContext) return;
     
+            setIsLoading(true);
             async function getWaveformData(): Promise<void> {
                 const audioBuffer = await initializeAudioBuffer();
                 if (!audioBuffer) {
@@ -47,11 +49,13 @@ export function useWaveformData(currentFile: File | null, audioContext: AudioCon
         useEffect(() => {
             downsampleWorker.onmessage = (e) => {
                 setVisualData(e.data);
+                setIsLoading(false);
             };
     
             selectionWorker.onmessage = (e) => {
                 if (e.data.type === "visual") {
                     setVisualData(e.data.data);
+                    setIsLoading(false);
                 } else if (e.data.type === "audio") {
                     const audioArray = new Float32Array(e.data.data);
                     setAudioData(audioArray);
@@ -129,7 +133,8 @@ export function useWaveformData(currentFile: File | null, audioContext: AudioCon
 			audioData: { type: "visual", data: visualData },
 			adjustmentValue: adjustmentValue ?? undefined,
 		});
+        setIsLoading(true);
 	}
 
-    return { audioData, visualData, modifySelectionData };
+    return { audioData, visualData, isLoading, modifySelectionData,  };
 }

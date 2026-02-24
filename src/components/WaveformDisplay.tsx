@@ -7,7 +7,7 @@ const SVG_DIMENSIONS = {
 	width: 700,
 };
 
-export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, selection, setSelection, nullSelection, audioData, getAudioTime, currentTime, audioContext, setCurrentTime, seek, playing }) {
+export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, selection, setSelection, nullSelection, audioData, getAudioTime, currentTime, audioContext, setCurrentTime, seek, playing, isLoading }) {
 	const [displayX, setDisplayX] = useState<number>(0);
 	const svgRef = useRef<SVGSVGElement>(null);
 
@@ -262,67 +262,66 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 
     }
 
-	function checkLoaded(): boolean {
-		const path = d3.select(svgRef.current).select("#waveform-path").node();
-		return path !== null;
+	if (isLoading) {
+		return (
+			<div className="waveformDisplay">
+				<div className="spinner-border text-warning" role="status">
+					<span className="visually-hidden">Loading...</span>
+				</div>
+			</div>
+		);
+	}
+
+	if (!audioData) {
+		return (
+			<div className="waveformDisplay">
+				<button className="defaultAudioBtn" onClick={loadDefaultAudio}>
+					Load Default Audio
+				</button>
+			</div>
+		);
 	}
 
 	return (
 		<div className="waveformDisplay">
-			{!audioData ? (
-				<button className="defaultAudioBtn" onClick={loadDefaultAudio}>
-					Load Default Audio
-				</button>
-			) : (
-				<>
-					{checkLoaded() && (
-						<div className="display">
-							{audioContext.state === "suspended" && (
-								<span className="seekDisplay display">
-									{playing === false && (
-										<h2>
-											Seek:{" "}
-											{getFormattedTimestamp(
-												getAudioTime(displayX),
-											)}
-										</h2>
-									)}
-								</span>
-							)}
-							{playing && (
-								<span className="timestampDisplay display">
-									<h2>
-										{getFormattedTimestamp(currentTime)}
-									</h2>
-								</span>
-							)}
-							{!nullSelection() && (
-								<span className="segmentDisplay display">
-									<h3>
-										Selection:
-										<span className="startTime">
-											{` ${getFormattedTimestamp(getAudioTime(selection[0]!))} `}
-										</span>
-										-
-										<span className="endTime">
-											{` ${getFormattedTimestamp(getAudioTime(selection[1]!))}`}
-										</span>
-									</h3>
-								</span>
-							)}
-						</div>
-					)}
-					<svg
-						id="waveform"
-						viewBox={`0 0 ${SVG_DIMENSIONS.width} ${SVG_DIMENSIONS.height}`}
-						preserveAspectRatio="xMidYMid slice"
-						ref={svgRef}
-						onMouseMove={(e) => handleMouseMove(e)}
-						onClick={handleLeftClick}
-						onContextMenu={(e) => handleRightClick(e)}
-					></svg>
-				</>
-			)}
+			<div className="display">
+				{audioContext.state === "suspended" && playing === false && (
+					<span className="seekDisplay display">
+						<h2>
+							Seek:{" "}
+							{getFormattedTimestamp(getAudioTime(displayX))}
+						</h2>
+					</span>
+				)}
+				{playing && (
+					<span className="timestampDisplay display">
+						<h2>{getFormattedTimestamp(currentTime)}</h2>
+					</span>
+				)}
+				{!nullSelection() && (
+					<span className="segmentDisplay display">
+						<h3>
+							Selection:
+							<span className="startTime">
+								{` ${getFormattedTimestamp(getAudioTime(selection[0]!))} `}
+							</span>
+							-
+							<span className="endTime">
+								{` ${getFormattedTimestamp(getAudioTime(selection[1]!))}`}
+							</span>
+						</h3>
+					</span>
+				)}
+			</div>
+			<svg
+				id="waveform"
+				viewBox={`0 0 ${SVG_DIMENSIONS.width} ${SVG_DIMENSIONS.height}`}
+				preserveAspectRatio="xMidYMid slice"
+				ref={svgRef}
+				onMouseMove={(e) => handleMouseMove(e)}
+				onClick={handleLeftClick}
+				onContextMenu={(e) => handleRightClick(e)}
+			></svg>
 		</div>
 	);
 }

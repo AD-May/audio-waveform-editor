@@ -21,7 +21,7 @@ export default function App() {
     // const [playing, setPlaying] = useState<boolean>(false);
     const audioDurationRef = useRef<number | null>(null);
     const audioContext = useAudioContext();
-    const { audioData, visualData, modifySelectionData } = useWaveformData(currentFile, audioContext, selection, audioDurationRef);
+    const { audioData, visualData, isLoading, modifySelectionData } = useWaveformData(currentFile, audioContext, selection, audioDurationRef);
     const {
 		currentPlaybackTime,
 		setCurrentPlaybackTime,
@@ -171,6 +171,7 @@ export default function App() {
                 audioContext={audioContext}
                 seek={seek}
                 playing={playing}
+                isLoading={isLoading}
             />
         </main>
         <footer>
