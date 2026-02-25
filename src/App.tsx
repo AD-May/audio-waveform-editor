@@ -49,7 +49,7 @@ export default function App() {
     }
 
     async function loadDefaultAudio(): Promise<void> {
-		const DEFAULT_AUDIO_URL = "/assets/default-audio[for-p].mp3";
+		const DEFAULT_AUDIO_URL = `${import.meta.env.BASE_URL}assets/default-audio[for-p].mp3`;
 		try {
 			const response = await fetch(DEFAULT_AUDIO_URL);
 			const audioBlob = await response.blob();
