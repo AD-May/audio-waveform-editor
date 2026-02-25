@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type Ref } from 'react';
+import { useState, useEffect, useRef, type Ref, type RefObject } from 'react';
 
 interface Node {
     name: string;
@@ -11,10 +11,11 @@ interface NodeCreationInfo {
 }
 
 export function usePlayback(audioData: Float32Array | null, audioContext: AudioContext | undefined, selection: number[] | null, modifySelectionData: (value?: number) => void
-, audioDurationRef: Ref<number>) {
+, audioDurationRef: RefObject<number>) {
     const [currentPlaybackTime, setCurrentPlaybackTime] = useState<number>(0);
     const [playing, setPlaying] = useState<boolean>(false);
     const [audioNodes, setAudioNodes] = useState<Node[]>([]);
+    const [intervalId, setIntervalId] = useState<number | null>(null);
 
     useEffect(() => {
 		function connectAudioNodes(): void {
@@ -60,20 +61,30 @@ export function usePlayback(audioData: Float32Array | null, audioContext: AudioC
 	useEffect(() => {
 		if (!audioContext) return;
 		let intervalId: number;
+
 		if (playing) {
 			intervalId = setInterval(() => {
 				setCurrentPlaybackTime((t) =>
 					t >= audioDurationRef!.current ? 0 : t + 1,
 				);
 			}, 1000);
+            setIntervalId(intervalId);
 		}
 
 		return () => clearInterval(intervalId);
+
 	}, [playing]);
 
     useEffect(() => {
         setCurrentPlaybackTime(0);
-    }, [audioContext])
+    }, [audioContext]);
+
+    useEffect(() => {
+        if (currentPlaybackTime >= audioDurationRef.current && intervalId) {
+            clearInterval(intervalId);
+            setCurrentPlaybackTime(0);
+        }
+    }, [currentPlaybackTime])
 
     async function createNewSourceNode(
 		time: number,

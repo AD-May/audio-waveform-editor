@@ -18,7 +18,6 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 
 	// Re-render waveform when audio data is edited or a new file is added
 	useEffect(() => {
-		// Extract all this logic to a custom useRenderWaveform hook
 		if (!audioData || !svgRef.current) return;
 		const svg = d3.select(svgRef?.current);
 		const g = getGroupSelection();
@@ -145,7 +144,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 				.attr("stroke-width", "1px");
 		}
 		
-	}, [selection]);
+	}, [selection, audioData]);
 
 	function getAxisScales(): LinearScales|undefined {
 
