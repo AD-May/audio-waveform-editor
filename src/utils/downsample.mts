@@ -24,7 +24,7 @@ export function downsample(data: Float32Array, targetLength: number): number[] |
 
     } catch (err) {
         console.error("Audio source could not be downsampled for visualization: ", err);
-        throw new Error(err);
+        throw new Error(err instanceof Error ? err.message : String(err));
     }
 }
 

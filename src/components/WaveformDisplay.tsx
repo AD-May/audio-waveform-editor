@@ -1,5 +1,5 @@
 import './WaveformDisplay.css';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, type Dispatch, type SetStateAction, type RefObject } from 'react';
 import * as d3 from 'd3';
 
 const SVG_DIMENSIONS = {
@@ -7,7 +7,23 @@ const SVG_DIMENSIONS = {
 	width: 700,
 };
 
-export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, selection, setSelection, nullSelection, audioData, getAudioTime, currentTime, audioContext, setCurrentTime, seek, playing, isLoading }) {
+interface WaveformDisplayProps {
+	audioDurationRef: RefObject<number | null>;
+	loadDefaultAudio: () => Promise<void>;
+	selection: (number | null)[] | null;
+	setSelection: Dispatch<SetStateAction<(number | null)[] | null>>;
+	nullSelection: () => boolean;
+	audioData: Float32Array | null;
+	getAudioTime: (xPosition: number) => number;
+	currentTime: number;
+	audioContext: AudioContext | undefined;
+	setCurrentTime: Dispatch<SetStateAction<number>>;
+	seek: (time: number) => void;
+	playing: boolean;
+	isLoading: boolean;
+}
+
+export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, selection, setSelection, nullSelection, audioData, getAudioTime, currentTime, audioContext, setCurrentTime, seek, playing, isLoading }: WaveformDisplayProps) {
 	const [displayX, setDisplayX] = useState<number>(0);
 	const svgRef = useRef<SVGSVGElement>(null);
 
@@ -37,7 +53,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 		function getAreaPath(scales: LinearScales): d3.Area<number> {
 			const area = d3
 				.area<number>(
-					(d, i) => scales.x(i),
+					(_d, i) => scales.x(i),
 					() => scales.y(0),
 					(d) => scales.y(d),
 				);
@@ -56,7 +72,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 		}
 
 		function createZoom(): void {
-			const zoomBehavior = (event) => {
+			const zoomBehavior = (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
 				const k = event.transform.k;
 				let x = event.transform.x;
 				let y = event.transform.y;
@@ -175,7 +191,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 	}	
 
 	function handleMouseMove(e: React.MouseEvent<SVGSVGElement>): void {
-		if (audioContext.state === "running") return;
+		if (audioContext?.state === "running") return;
 		const screenX = e.nativeEvent.offsetX;
 		const rect = svgRef.current?.getBoundingClientRect();
 		if (!rect || screenX < 0) {
@@ -187,7 +203,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 	}
 
 	async function handleLeftClick(): Promise<void> {
-		if (audioContext.state === "running") {
+		if (audioContext?.state === "running") {
 			return;
 		}
         
@@ -196,10 +212,10 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 		setCurrentTime(audioTime);
 	}
 
-	function handleRightClick(e): void {
+	function handleRightClick(e: React.MouseEvent): void {
 		e.preventDefault();
 		const currentX = displayX;
-		if (audioContext.state === "running") {
+		if (audioContext?.state === "running") {
 			return;
 		}
 		if (selection) {
@@ -284,7 +300,7 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 	return (
 		<div className="waveformDisplay">
 			<div className="display">
-				{audioContext.state === "suspended" && playing === false && (
+				{audioContext?.state === "suspended" && playing === false && (
 					<span className="seekDisplay display">
 						<h2>
 							Seek:{" "}
@@ -302,11 +318,11 @@ export default function WaveformDisplay({ audioDurationRef, loadDefaultAudio, se
 						<h3>
 							Selection:
 							<span className="startTime">
-								{` ${getFormattedTimestamp(getAudioTime(selection[0]!))} `}
+								{` ${getFormattedTimestamp(getAudioTime(selection![0]!))} `}
 							</span>
 							-
 							<span className="endTime">
-								{` ${getFormattedTimestamp(getAudioTime(selection[1]!))}`}
+								{` ${getFormattedTimestamp(getAudioTime(selection![1]!))}`}
 							</span>
 						</h3>
 					</span>

@@ -1,4 +1,4 @@
-import { useState, useEffect, type Ref } from 'react';
+import { useState, useEffect, type RefObject } from 'react';
 import type { SelectionBounds } from "../types/types.mts";
 
 const SVG_DIMENSIONS = {
@@ -19,7 +19,7 @@ const selectionWorker = new Worker(
 
 const NUMBER_OF_SAMPLES = 4000;
 
-export function useWaveformData(currentFile: File | null, audioContext: AudioContext | undefined, selection: number[], audioDurationRef: Ref<number>) {
+export function useWaveformData(currentFile: File | null, audioContext: AudioContext | undefined, selection: (number | null)[] | null, audioDurationRef: RefObject<number | null>) {
     const [audioData, setAudioData] = useState<Float32Array | null>(null);
 	const [visualData, setVisualData] = useState<Float32Array | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -106,9 +106,9 @@ export function useWaveformData(currentFile: File | null, audioContext: AudioCon
 	}
 
     function getBufferIndices(data: Float32Array): SelectionBounds | void {
-        if (!selection[0] || !selection[1]) return;
-        const startIndex = Math.round((selection![0]! / SVG_DIMENSIONS.width) * data.length);
-        const endIndex = Math.round((selection![1]! / SVG_DIMENSIONS.width) * data.length);
+        if (!selection || !selection[0] || !selection[1]) return;
+        const startIndex = Math.round((selection[0] / SVG_DIMENSIONS.width) * data.length);
+        const endIndex = Math.round((selection[1] / SVG_DIMENSIONS.width) * data.length);
         return { startIndex, endIndex };
     }
 

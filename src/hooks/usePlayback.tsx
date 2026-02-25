@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type Ref, type RefObject } from 'react';
+import { useState, useEffect, type RefObject } from 'react';
 
 interface Node {
     name: string;
@@ -10,8 +10,7 @@ interface NodeCreationInfo {
     newAudioNodes: Node[];
 }
 
-export function usePlayback(audioData: Float32Array | null, audioContext: AudioContext | undefined, selection: number[] | null, modifySelectionData: (value?: number) => void
-, audioDurationRef: RefObject<number>) {
+export function usePlayback(audioData: Float32Array | null, audioContext: AudioContext | undefined, selection: (number | null)[] | null, modifySelectionData: (value?: number) => void, audioDurationRef: RefObject<number | null>) {
     const [currentPlaybackTime, setCurrentPlaybackTime] = useState<number>(0);
     const [playing, setPlaying] = useState<boolean>(false);
     const [audioNodes, setAudioNodes] = useState<Node[]>([]);
@@ -65,7 +64,7 @@ export function usePlayback(audioData: Float32Array | null, audioContext: AudioC
 		if (playing) {
 			intervalId = setInterval(() => {
 				setCurrentPlaybackTime((t) =>
-					t >= audioDurationRef!.current ? 0 : t + 1,
+					t >= (audioDurationRef.current ?? 0) ? 0 : t + 1,
 				);
 			}, 1000);
             setIntervalId(intervalId);
@@ -80,7 +79,7 @@ export function usePlayback(audioData: Float32Array | null, audioContext: AudioC
     }, [audioContext]);
 
     useEffect(() => {
-        if (currentPlaybackTime >= audioDurationRef.current && intervalId) {
+        if (audioDurationRef.current !== null && currentPlaybackTime >= audioDurationRef.current && intervalId) {
             clearInterval(intervalId);
             setCurrentPlaybackTime(0);
         }
@@ -169,10 +168,10 @@ export function usePlayback(audioData: Float32Array | null, audioContext: AudioC
 	}
 
 	function setEditTimes(param: AudioParam, value: number): void {
-		if (!selection[0] || !selection[1]) {
+		if (!selection || !selection[0] || !selection[1]) {
 			return;
 		}
-		if (selection[0] && (selection![0] - currentPlaybackTime < 0)) {
+		if (selection[0] && (selection[0] - currentPlaybackTime < 0)) {
 			return;
 		}
 		const startTime =

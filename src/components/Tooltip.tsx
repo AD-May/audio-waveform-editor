@@ -1,10 +1,21 @@
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useState } from 'react';
 import './Tooltip.css';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faPause, faScissors } from '@fortawesome/free-solid-svg-icons';
 
-export default function Tooltip({ setFile, audioContext, getDownloadURL, currentSetting, setCurrentSetting, handleEdit, invalidSelection, setPlaying }) {
+interface TooltipProps {
+	setFile: Dispatch<SetStateAction<File | null>>;
+	audioContext: AudioContext | undefined;
+	getDownloadURL: (e: React.MouseEvent) => void;
+	currentSetting: string;
+	setCurrentSetting: Dispatch<SetStateAction<string>>;
+	handleEdit: (e: ChangeEvent) => void;
+	invalidSelection: () => boolean;
+	setPlaying: Dispatch<SetStateAction<boolean>>;
+}
+
+export default function Tooltip({ setFile, audioContext, getDownloadURL, currentSetting, setCurrentSetting, handleEdit, invalidSelection, setPlaying }: TooltipProps) {
 	const [error, setError] = useState<string>("");
 	const [displaySlider, setDisplaySlider] = useState<boolean>(false);
 
@@ -25,6 +36,7 @@ export default function Tooltip({ setFile, audioContext, getDownloadURL, current
 	}
 
 	function handleAudioPlayback(): void {
+		if (!audioContext) return;
 		if (audioContext.state === "running") {
             audioContext.suspend()
             setPlaying(false);
@@ -122,7 +134,7 @@ export default function Tooltip({ setFile, audioContext, getDownloadURL, current
                 <button
                     id="trim-btn"
                     className="btn btn-warning"
-                    onClick={handleEdit}
+                    onClick={(e) => handleEdit(e as unknown as ChangeEvent)}
                 >
                     Trim{" "}
                     <FontAwesomeIcon icon={faScissors} />
