@@ -6,7 +6,7 @@
     align-items: center;
     justify-content: space-around;
     gap: 2rem;
-    height: 4rem;
+    height: 5rem;
 }
 
 #audio-file-select {
@@ -22,7 +22,6 @@
 }
 
 #slider-label {
-    
     font-weight: 600;
 }
 
@@ -30,5 +29,25 @@
     width: min-content;
     accent-color: orange;
     margin-left: -4rem;
+}
+
+.upload-container {
+    justify-items: center;
+}
+
+@media (max-width: 1400px) {
+    .tooltipContainer {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: max-content;
+        padding: 1.2rem;
+        text-align: center;
+    }
+    .slider {
+        margin: auto;
+        width: 10rem;
+    }
+
 }
 
