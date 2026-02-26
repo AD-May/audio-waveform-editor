@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# Audio Waveform Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Modify and visualize your audio files**
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Upload any .mp3 file less than 10MB
 
-## React Compiler
+- Visualize and zoom in/out on a representation of the audio file's amplitude waveform
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Play/pause audio with real-time playhead tracking
 
-## Expanding the ESLint configuration
+- Ability to select regions on the waveform and edit their volume or trim them from the audio entirely
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Real-time playback stereo-panning control
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Export edited audio in .wav format
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+[![Tech Used](https://skillicons.dev/icons?i=react,ts,d3,vite,vitest)](https://skillicons.dev)
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## APIs
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+- [Web Workers API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Architecture
+
+- Utilization of Web Workers to process downsampling of audio for visualization, and re-processing the AudioBuffer on edit
+
+- Custom hooks for separation of concerns (playback, handling audio data, creating audio context)
+
+- D3.js for performant waveform rendering and user interaction
+
+- .wav encoding from raw PCM data for export
+
+## Getting Started
+
+1. Clone the repo to your local machine
+2. Run `npm install`
+3. Run `npm run dev` to run application
+4. Run `npm test` to run test suite
+
+
+
+
