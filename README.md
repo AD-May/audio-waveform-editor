@@ -18,11 +18,11 @@
 
 ## Stack
 
-[![React](https://skillicons.dev/icons?i=react&perline=1)](https://skillicons.dev) React
-[![TypeScript](https://skillicons.dev/icons?i=ts&perline=1)](https://skillicons.dev) TypeScript
-[![D3.js](https://skillicons.dev/icons?i=d3&perline=1)](https://skillicons.dev) D3
-[![Vite](https://skillicons.dev/icons?i=vite&perline=1)](https://skillicons.dev) Vite
-[![Vitest](https://skillicons.dev/icons?i=vitest&perline=1)](https://skillicons.dev) Vitest
+[![React](https://skillicons.dev/icons?i=react)](https://skillicons.dev) React
+[![TypeScript](https://skillicons.dev/icons?i=ts)](https://skillicons.dev) TypeScript
+[![D3.js](https://skillicons.dev/icons?i=d3)](https://skillicons.dev) D3
+[![Vite](https://skillicons.dev/icons?i=vite)](https://skillicons.dev) Vite
+[![Vitest](https://skillicons.dev/icons?i=vitest)](https://skillicons.dev) Vitest
 
 ## APIs
 
