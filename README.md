@@ -18,7 +18,11 @@
 
 ## Stack
 
-[![Tech Used](https://skillicons.dev/icons?i=react,ts,d3,vite,vitest)](https://skillicons.dev)
+[![React](https://skillicons.dev/icons?i=react)](https://skillicons.dev) React
+[![TypeScript](https://skillicons.dev/icons?i=ts)](https://skillicons.dev) TypeScript
+[![D3.js](https://skillicons.dev/icons?i=d3)](https://skillicons.dev) D3
+[![Vite](https://skillicons.dev/icons?i=vite)](https://skillicons.dev) Vite
+[![Vitest](https://skillicons.dev/icons?i=vitest)](https://skillicons.dev) Vitest
 
 ## APIs
 
@@ -42,6 +46,12 @@
 3. Run `npm run dev` to run application
 4. Run `npm test` to run test suite
 
+
+## Future
+
+- [ ] Add more extensive error handling
+- [ ] Add Component/Integration testing
+- [ ] Include new editing capabilities
 
 
 
