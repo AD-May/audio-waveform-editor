@@ -2,7 +2,7 @@
 
 **Modify and visualize your audio files**
 
-
+https://github.com/user-attachments/assets/7f63b628-da13-47e3-86bb-428d9d54eb62
 
 ## Features
 
