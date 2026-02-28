@@ -40,9 +40,10 @@
 - D3.js for performant waveform rendering and user interaction
 
 - .wav encoding from raw PCM data for export
+<hr></hr>
 
 **Decoding** 
-<hr></hr>
+
 
 ![audio-waveform-data-flow-diagram-decode](https://github.com/user-attachments/assets/5ba8132d-70ff-4615-a82b-8515471b1a40)
 
