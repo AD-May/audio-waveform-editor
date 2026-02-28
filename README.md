@@ -42,6 +42,7 @@
 - .wav encoding from raw PCM data for export
 
 **Decoding** 
+
 ![audio-waveform-data-flow-diagram-decode](https://github.com/user-attachments/assets/5ba8132d-70ff-4615-a82b-8515471b1a40)
 
 ## Getting Started
