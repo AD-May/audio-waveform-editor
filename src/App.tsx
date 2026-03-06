@@ -15,10 +15,8 @@ const SVG_DIMENSIONS = {
 export default function App() {
     const [currentFile, setCurrentFile] = useState<File | null>(null);
     const [selection, setSelection] = useState<Array<number | null> | null>(null);
-    // const [audioNodes, setAudioNodes] = useState<Node[]>([]);
     const [currentSetting, setCurrentSetting] = useState<string>("")
-    // const [currentPlaybackTime, setCurrentPlaybackTime] = useState<number>(0);
-    // const [playing, setPlaying] = useState<boolean>(false);
+    const debounceIdRef = useRef<number | null>(null);
     const audioDurationRef = useRef<number | null>(null);
     const audioContext = useAudioContext();
     const { audioData, visualData, isLoading, modifySelectionData } = useWaveformData(currentFile, audioContext, selection, audioDurationRef);
@@ -117,8 +115,13 @@ export default function App() {
     }
 
     function handleEdit(e: ChangeEvent): void {
+            if (debounceIdRef.current) {
+                clearTimeout(debounceIdRef.current);
+                debounceIdRef.current = null;
+            }
             const target = e.target as HTMLInputElement;
             const currentValue = Number(target.value);
+            let debounceId: number;
             switch (currentSetting) {
                 case "Balance":
                     target.max = "1";
@@ -130,7 +133,8 @@ export default function App() {
                     target.max = "2";
                     target.min = "0";
                     target.step = ".20";
-                    changeVolume(currentValue);
+                    debounceId = setTimeout(() => changeVolume(currentValue), 200);
+                    debounceIdRef.current = debounceId;
                     break;
                 case "Trim":
                     modifySelectionData();
